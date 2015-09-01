@@ -1,0 +1,19 @@
+Aby zapewnić, że skanery będą poprawnie (tj. zawsze z takimi samymi nazwami) identyfikowane po podłączeniu do USB:
+
+1. W katalogu /etc/udev/rules.d tworzymy plik z 'zasadą' dla narzędzia udev, np. sudo gedit /etc/udev/rules.d/47-hokuyo.rules
+
+2. W jego wnętrzu podajemy treść takiej zasady:
+SUBSYSTEMS=="usb", KERNEL=="ttyACM[0-9]*", ACTION=="add", ATTRS{idVendor}=="15d1", ATTRS{idProduct}=="0000", ATTRS{manufacturer}=="Hokuyo Data Flex for USB", ATTRS{product}=="URG-Series USB Driver", MODE="666", PROGRAM="/etc/ros/run.sh hokuyo_node getID %N q", SYMLINK+="sensors/hokuyo_%c", GROUP="dialout"
+
+3. W katalogu /etc/ros/ tworzymy plik run.sh i nadajemy mu odpowiednie prawa (sudo chmod +x /etc/ros/run.sh).
+
+4. We wnętrzu pliku run.sh wpisujemy:
+#!/bin/sh
+. /opt/ros/hydro/setup.sh 
+rosrun $@
+
+5. Odświeżamy listę zasad: sudo udevadm control --reload-rules
+
+Od teraz po podpięciu skanera do gniazda USB w katalogu /dev/ pojawi się, oprócz ttyACM*, także /sensors/hokuyo_<NUMER-SERYJNY>.
+
+

@@ -1,0 +1,13 @@
+The scan tools for RobRex contain in:
+- scan merger (from IRA laser tools) which collects scans published by two hokuyo_nodes and merges them into one, 360 degree scan attached to /base frame,
+- scan matcher (based on canonical scan matcher - csm) which performs the scan matching algorithm in order to obtain position and orientation of the robot,
+- gmapping which performs the SLAM algorithm and thus builds the map,
+- obstacle_detector - which detects obstacles locally around the robot.
+
+The pipeline of the scanner tools goes like this:
+
+1. Two hokuyo nodes collects the data from front and read laser scanners respectively. They publish them under topic /front_scan and /rear_scan with attach coordinate frames /front_laser and /rear_laser.
+2. The laserscan_multi_merger node collects both of these messages and merges them into one 360 degree scan attached to coordinate frame /base and published under topic /scan.
+3. The 360 degree scan is being subscribed by the laser_scan_matcher node, which converts it into a transformation between /world and /base coordinate frames, and thus providing the pose estimate.
+4. The transformation provided by laser_scan_matcher and /scan message serve as input for gmapping node, which builds the map of the robot's environment.
+5. Additionally, the /world to /base transformation and /scan message server as input for segments_detector node, which turns the scan into a collection of segments that represent the environment. The segments are published as marker_arrays for Rviz. One marker_array contains line list which shows the actual segments, and the other array contain triangle list which shows the area covered by the scans that make up the segment.
