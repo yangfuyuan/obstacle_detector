@@ -1,26 +1,20 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>obstacle_detector</name>
-  <version>0.0.0</version>
-  <description>The obstacle_detector package</description>
+  <version>1.0.0</version>
+  <description>Detecting obstacles from laser scanner</description>
   <maintainer email="mateusz.przybyla@doctorate.put.poznan.pl">Mateusz Przybyla</maintainer>
+  <author>Mateusz Przybyla</author>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>tf</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
-
-  <run_depend>tf</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>visualization_msgs</run_depend>
+  <depend>tf</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
 
   <export>
   </export>
