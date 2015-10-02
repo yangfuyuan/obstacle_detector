@@ -30,19 +30,18 @@ public:
 private:
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl);
-  void updateParams(const ros::TimerEvent& event);
-
   void publishObstacles();
   void publishMarkers();
-  void saveSnapshot();
+  void updateParams(const ros::TimerEvent& event);
 
   void processPoints();
   void groupAndDetectSegments();
   void detectSegments(std::list<Point>& point_set);
   void mergeSegments();
   void detectCircles();
-
   bool compareAndMerge(Segment &s1, Segment &s2);
+
+  void saveSnapshot();
 
   // ROS handlers
   ros::NodeHandle nh_;
@@ -50,14 +49,14 @@ private:
 
   ros::Subscriber scan_sub_;
   ros::Subscriber pcl_sub_;
+  ros::Publisher  markers_pub_;
+  ros::Publisher  obstacles_pub_;
   ros::Timer      params_tim_;
-
-  ros::Publisher markers_pub_;
-  ros::Publisher obstacles_pub_;
 
   // Detector variables
   std::vector<Point> initial_points_;
   std::list<Segment> segments_;
+  std::list<Segment> new_segments_;
   std::list<Circle>  circles_;
 
   // Parameters

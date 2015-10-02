@@ -26,7 +26,7 @@ add_executable(static_scan_publisher src/static_scan_pub.cpp)
 target_link_libraries(static_scan_publisher ${catkin_LIBRARIES})
 add_dependencies(static_scan_publisher ${PROJECT_NAME}_gencpp)
 
-#add_executable(scans2pcl src/scans2pcl.cpp include/scans2pcl.h)
-#target_link_libraries(scans2pcl ${catkin_LIBRARIES})
-#add_dependencies(scans2pcl ${PROJECT_NAME}_gencpp)
+add_executable(scans2pcl src/scans2pcl.cpp include/scans2pcl.h)
+target_link_libraries(scans2pcl ${catkin_LIBRARIES})
+add_dependencies(scans2pcl ${PROJECT_NAME}_gencpp)
 

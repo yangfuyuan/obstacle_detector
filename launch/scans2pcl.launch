@@ -1,0 +1,16 @@
+<!-- Launches scans2pcl converter with default values of parameters. -->
+
+<launch>
+  <node name="scans2pcl" pkg="obstacle_detector" type="scans2pcl" respawn="false" required="false" output="screen">
+    <param name="frame_id"         type="string" value="base"/>
+    <param name="front_scan_topic" type="string" value="front_scan"/>
+    <param name="rear_scan_topic"  type="string" value="rear_scan"/>
+    <param name="pcl_topic"        type="string" value="pcl_from_scans"/>
+
+    <param name="omit_overlapping_scans" type="bool" value="true"/>
+
+    <param name="scanners_separation"  value="0.45"/>
+    <param name="max_unreceived_scans" value="1"/>
+  </node>
+</launch>
+

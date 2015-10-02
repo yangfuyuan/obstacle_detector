@@ -18,7 +18,7 @@ configures transformations and starts Rviz for data visualisation.
     <param name="time_offset" value="0.0"/>
     <param name="cluster" value="1"/>
 
-    <remap from="/scan" to="/front_scan"/>
+    <remap from="/scan" to="front_scan"/>
   </node>
 
   <node name="rear_hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" required="false" output="screen">
@@ -34,7 +34,7 @@ configures transformations and starts Rviz for data visualisation.
     <param name="time_offset" value="0.0"/>
     <param name="cluster" value="1"/>
 
-    <remap from="/scan" to="/rear_scan"/>
+    <remap from="/scan" to="rear_scan"/>
   </node>
 
   <node name="base_to_front_laser" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0.1825 0 0 0 0 0 /base /front_laser 100"/>

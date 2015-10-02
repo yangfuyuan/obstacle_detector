@@ -2,12 +2,10 @@
 #define SCANS2PCL_H
 
 #include <cmath>
-#include <vector>
 #include <ros/ros.h>
+#include <geometry_msgs/Point32.h>
 #include <sensor_msgs/LaserScan.h>
-#include <obstacle_detector/Point2D.h>
-#include <obstacle_detector/PointCloud.h>
-#include <obstacle_detector/defines.h>
+#include <sensor_msgs/PointCloud.h>
 
 namespace obstacle_detector
 {
@@ -15,25 +13,38 @@ namespace obstacle_detector
 class Scans2PCL
 {
 public:
-  Scans2PCL(ros::NodeHandle n);
+  Scans2PCL();
 
-  ros::NodeHandle nh;
-  ros::Subscriber scan1_sub;
-  ros::Subscriber scan2_sub;
-  ros::Publisher pcl_pub;
-  ros::Publisher alert_pub;
-
-  PointCloud pcl_msg, alert_msg;
-
-  bool omit_overlapping_scans;
-  bool first_scan_received;
-  bool second_scan_received;
-  int unreceived_scans1, unreceived_scans2;
-
+private:
+  void frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  void rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void publishPCL();
-  void publishAlert();
-  void scan1Callback(const sensor_msgs::LaserScan::ConstPtr& scan_msg);
-  void scan2Callback(const sensor_msgs::LaserScan::ConstPtr& scan_msg);
+  void updateParams(const ros::TimerEvent& event);
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
+
+  ros::Subscriber front_scan_sub_;
+  ros::Subscriber rear_scan_sub_;
+  ros::Publisher  pcl_pub_;
+  ros::Timer      params_tim_;
+
+  sensor_msgs::PointCloud pcl_msg_;
+
+  bool first_scan_received_;
+  bool second_scan_received_;
+  int unreceived_scans1_;
+  int unreceived_scans2_;
+
+  // Parameters
+  std::string p_frame_id_;          // TF frame name for the pcl message
+  std::string p_front_scan_topic_;  // Name of the front scan messages topic
+  std::string p_rear_scan_topic_;   // Name of the rear scan messages topic
+  std::string p_pcl_topic_;         // Name of the pcl messages topic
+
+  bool p_omit_overlapping_scans_;   // Omit the points which project onto area of the other scanner
+  double p_scanners_separation_;    // Distance between scanner centers
+  int p_max_unreceived_scans_;      // Maximum allowable unreceived scans to start publishing one scan
 };
 
 }

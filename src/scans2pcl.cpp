@@ -1,133 +1,121 @@
-#include "obstacle_detector/scans2pcl.h"
+#include "scans2pcl.h"
 
 using namespace obstacle_detector;
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "scan2pcl_node");
-  ros::NodeHandle n;
-  Scans2PCL *S2P = new Scans2PCL(n);
+void Scans2PCL::updateParams(const ros::TimerEvent& event) {
+  static bool first_call = true;
 
-  ros::spin();
+  if (first_call) {
+    if (!nh_local_.getParam("front_scan_topic", p_front_scan_topic_))
+      p_front_scan_topic_ = "front_scan";
 
-  delete S2P;
-  return 0;
+    if (!nh_local_.getParam("rear_scan_topic", p_rear_scan_topic_))
+      p_rear_scan_topic_ = "rear_scan";
+
+    if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
+      p_pcl_topic_ = "pcl_from_scans";
+
+    first_call = false;
+  }
+
+  if (!nh_local_.getParam("frame_id", p_frame_id_))
+    p_frame_id_ = "base";
+
+  if (!nh_local_.getParam("omit_overlapping_scans", p_omit_overlapping_scans_))
+    p_omit_overlapping_scans_ = true;
+
+  if (!nh_local_.getParam("scanners_separation", p_scanners_separation_))
+    p_scanners_separation_ = 0.45;
+
+  if (!nh_local_.getParam("max_unreceived_scans", p_max_unreceived_scans_))
+    p_max_unreceived_scans_ = 1;
 }
 
+Scans2PCL::Scans2PCL() : nh_(), nh_local_("~") {
+  updateParams(ros::TimerEvent());
 
-Scans2PCL::Scans2PCL(ros::NodeHandle n) : nh(n)
-{
-  scan1_sub = nh.subscribe<sensor_msgs::LaserScan>("/scan_1", 1, &Scans2PCL::scan1Callback, this);
-  scan2_sub = nh.subscribe<sensor_msgs::LaserScan>("/scan_2", 1, &Scans2PCL::scan2Callback, this);
-  pcl_pub = nh.advertise<PointCloud>("/obstacle/pcl", 1);
-  alert_pub = nh.advertise<PointCloud>("/obstacle/alerts", 1);
+  front_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_front_scan_topic_, 5, &Scans2PCL::frontScanCallback, this);
+  rear_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_rear_scan_topic_, 5, &Scans2PCL::rearScanCallback, this);
+  pcl_pub_ = nh_.advertise<sensor_msgs::PointCloud>(p_pcl_topic_, 5);
+  params_tim_ = nh_.createTimer(ros::Duration(0.5), &Scans2PCL::updateParams, this);
 
-  omit_overlapping_scans = OMIT_OVERLAPPING_SCANS;
-  first_scan_received = false;
-  second_scan_received = false;
-  unreceived_scans1 = 0;
-  unreceived_scans2 = 0;
-
-  pcl_msg.header.frame_id = "base";
-  alert_msg.header.frame_id = "base";
+  first_scan_received_ = false;
+  second_scan_received_ = false;
+  unreceived_scans1_ = 0;
+  unreceived_scans2_ = 0;
 }
 
+void Scans2PCL::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
+  geometry_msgs::Point32 point;
 
-// Scanner 1 is the front one
-void Scans2PCL::scan1Callback(const sensor_msgs::LaserScan::ConstPtr& scan_msg)
-{
-  Point2D point;
+  float phi = scan->angle_min;
 
-  float phi = scan_msg->angle_min;
+  for (const float r : scan->ranges) {
+    if (r > scan->range_min && r < scan->range_max) {
+      point.x = r * cos(phi) + p_scanners_separation_ / 2.0; // Y_|X
+      point.y = r * sin(phi);
 
-  for (auto &r : scan_msg->ranges)
-  {
-    if (r > scan_msg->range_min && r < scan_msg->range_max)
-    {
-      point.x = r*cos(phi) + SCANNERS_SEPARATION/2; // Y_|X
-      point.y = r*sin(phi);
-
-      if (r < ALERT_DISTANCE)
-        alert_msg.points.push_back(point);
-
-      if (!(omit_overlapping_scans && point.x < 0.0))
-        pcl_msg.points.push_back(point);
+      if (!(p_omit_overlapping_scans_ && point.x < 0.0))
+        pcl_msg_.points.push_back(point);
     }
-
-    phi += scan_msg->angle_increment;
+    phi += scan->angle_increment;
   }
 
-  first_scan_received = true;
+  first_scan_received_ = true;
 
-  if (second_scan_received || unreceived_scans2 > MAX_UNRECEIVED_SCANS)
-  {
+  if (second_scan_received_ || unreceived_scans2_ > p_max_unreceived_scans_) {
     publishPCL();
-    publishAlert();
 
-    unreceived_scans1 = 0;
+    unreceived_scans1_ = 0;
   }
-  else unreceived_scans2++;
+  else unreceived_scans2_++;
 }
 
+void Scans2PCL::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
+  geometry_msgs::Point32 point;
 
-// Scanner 2 is the rear one
-void Scans2PCL::scan2Callback(const sensor_msgs::LaserScan::ConstPtr& scan_msg)
-{
-  Point2D point;
+  float phi = scan->angle_min;
 
-  float phi = scan_msg->angle_min;
+  for (const float r : scan->ranges) {
+    if (r > scan->range_min && r < scan->range_max) {
+      point.x = -r * cos(phi) - p_scanners_separation_ / 2.0; // Y_|X
+      point.y = -r * sin(phi);
 
-  for (auto &r : scan_msg->ranges)
-  {
-    if (r > scan_msg->range_min && r < scan_msg->range_max)
-    {
-      point.x = -r*cos(phi) - SCANNERS_SEPARATION/2; // Y_|X
-      point.y = -r*sin(phi);
-
-      if (r < ALERT_DISTANCE)
-        alert_msg.points.push_back(point);
-
-      if (!(omit_overlapping_scans && point.x > 0.0))
-        pcl_msg.points.push_back(point);
+      if (!(p_omit_overlapping_scans_ && point.x > 0.0))
+        pcl_msg_.points.push_back(point);
     }
-
-      phi += scan_msg->angle_increment;
+    phi += scan->angle_increment;
   }
 
-  second_scan_received = true;
+  second_scan_received_ = true;
 
-  if (first_scan_received || unreceived_scans1 > MAX_UNRECEIVED_SCANS)
-  {
+  if (first_scan_received_ || unreceived_scans1_ > p_max_unreceived_scans_) {
     publishPCL();
-    publishAlert();
 
-    unreceived_scans2 = 0;
+    unreceived_scans2_ = 0;
   }
-  else unreceived_scans1++;
+  else unreceived_scans1_++;
 }
 
-
-void Scans2PCL::publishPCL()
-{
-  pcl_msg.header.stamp = ros::Time::now();
-
-  pcl_pub.publish(pcl_msg);
-
-  pcl_msg.points.clear();
+void Scans2PCL::publishPCL() {
+  pcl_msg_.header.frame_id = p_frame_id_;
+  pcl_msg_.header.stamp = ros::Time::now();
+  pcl_pub_.publish(pcl_msg_);
+  pcl_msg_.points.clear();
 
   // There is no need to omit overlapping scans from one scan
-  omit_overlapping_scans = (unreceived_scans1 <= MAX_UNRECEIVED_SCANS && unreceived_scans1 <= MAX_UNRECEIVED_SCANS);
+  p_omit_overlapping_scans_ = (unreceived_scans1_ <= p_max_unreceived_scans_ && unreceived_scans2_ <= p_max_unreceived_scans_);
 
-  first_scan_received = false;
-  second_scan_received = false;
+  first_scan_received_ = false;
+  second_scan_received_ = false;
 }
 
+int main(int argc, char **argv) {
+  ros::init(argc, argv, "scan2pcl");
+  Scans2PCL S2P;
 
-void Scans2PCL::publishAlert()
-{
-  alert_msg.header.stamp = ros::Time::now();
+  ROS_INFO("Starting Scans to PCL Converter.");
+  ros::spin();
 
-  alert_pub.publish(alert_msg);
-
-  alert_msg.points.clear();
+  return 0;
 }

@@ -3,6 +3,65 @@
 using namespace std;
 using namespace obstacle_detector;
 
+void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
+  static bool first_call = true;
+
+  if (first_call) {
+    if (!nh_local_.getParam("frame_id", p_frame_id_))
+      p_frame_id_ = "base";
+
+    if (!nh_local_.getParam("scan_topic", p_scan_topic_))
+      p_scan_topic_ = "scan";
+
+    if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
+      p_pcl_topic_ = "pcl";
+
+    if (!nh_local_.getParam("obstacle_topic", p_obstacle_topic_))
+      p_obstacle_topic_ = "obstacles";
+
+    if (!nh_local_.getParam("marker_topic", p_marker_topic_))
+      p_marker_topic_ = "obstacle_markers";
+
+    if (!nh_local_.getParam("use_scan", p_use_scan_))
+      p_use_scan_ = true;
+
+    if (!nh_local_.getParam("use_pcl", p_use_pcl_))
+      p_use_pcl_ = false;
+
+    if (!nh_local_.getParam("publish_markers", p_publish_markers_))
+      p_publish_markers_ = true;
+
+    first_call = false;
+  }
+
+  if (!nh_local_.getParam("save_snapshot", p_save_snapshot_))
+    p_save_snapshot_ = false;
+
+  if (!nh_local_.getParam("min_group_points", p_min_group_points_))
+    p_min_group_points_ = 3;
+
+  if (!nh_local_.getParam("max_group_distance", p_max_group_distance_))
+    p_max_group_distance_ = 0.100;
+
+  if (!nh_local_.getParam("distance_proportion", p_distance_proportion_))
+    p_distance_proportion_ = 0.006136;
+
+  if (!nh_local_.getParam("max_split_distance", p_max_split_distance_))
+    p_max_split_distance_ = 0.100;
+
+  if (!nh_local_.getParam("max_merge_separation", p_max_merge_separation_))
+    p_max_merge_separation_ = 0.200;
+
+  if (!nh_local_.getParam("max_merge_spread", p_max_merge_spread_))
+    p_max_merge_spread_ = 0.070;
+
+  if (!nh_local_.getParam("max_circle_radius", p_max_circle_radius_))
+    p_max_circle_radius_ = 0.300;
+
+  if (!nh_local_.getParam("radius_enlargement", p_radius_enlargement_))
+    p_radius_enlargement_ = 0.050;
+}
+
 ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
   updateParams(ros::TimerEvent());
 
@@ -43,21 +102,22 @@ void ObstacleDetector::pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl)
   processPoints();
 }
 
-void ObstacleDetector::processPoints()
-{
+void ObstacleDetector::processPoints() {
+  segments_.clear();
+  circles_.clear();
+
   groupAndDetectSegments();
   mergeSegments();
   detectCircles();
 
-  if (p_save_snapshot_)
-    saveSnapshot();
+//  if (p_save_snapshot_)
+//    saveSnapshot();
 
   if (p_publish_markers_)
     publishMarkers();
 
   publishObstacles();
 }
-
 
 void ObstacleDetector::groupAndDetectSegments() {
   list<Point> point_set;
@@ -85,7 +145,7 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
   double max_distance = 0.0;
   double distance     = 0.0;
 
-  // Seek the point of division. Omit first and last point of the set.
+  // Seek the point of division; omit first and last point of the set
   for (auto point_itr = ++point_set.begin(); point_itr != --point_set.end(); ++point_itr) {
     if ((distance = segment.distanceTo(*point_itr)) >= max_distance) {
       double r = (*point_itr).length();
@@ -97,8 +157,8 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
     }
   }
 
-  if (max_distance > 0.0) { // Split the set.
-    point_set.insert(set_divider, *set_divider);  // Clone the dividing point for each group.
+  if (max_distance > 0.0) { // Split the set
+    point_set.insert(set_divider, *set_divider);  // Clone the dividing point for each group
 
     list<Point> subset1, subset2;
     subset1.splice(subset1.begin(), point_set, point_set.begin(), set_divider);
@@ -113,12 +173,15 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
 }
 
 void ObstacleDetector::mergeSegments() {
+  new_segments_.clear();
+
   for (auto i_ptr = segments_.begin(); i_ptr != segments_.end(); ++i_ptr) {
     for (auto j_ptr = segments_.begin(); j_ptr != segments_.end(); ++j_ptr) {
       if (i_ptr != j_ptr) {
         if (compareAndMerge(*i_ptr, *j_ptr)) {
-          segments_.erase(i_ptr);
-          segments_.erase(j_ptr);
+          ;
+//          segments_.erase(i_ptr++);
+//          segments_.erase(j_ptr++);
         }
       }
     }
@@ -144,8 +207,8 @@ bool ObstacleDetector::compareAndMerge(Segment& s1, Segment& s2) {
         s.distanceTo(s1.last_point())  < p_max_merge_spread_ &&
         s.distanceTo(s2.first_point()) < p_max_merge_spread_ &&
         s.distanceTo(s2.last_point())  < p_max_merge_spread_) {
-      segments_.push_back(s);
-      segments_.back().point_set().assign(merged_points.begin(), merged_points.end());
+      new_segments_.push_back(s);
+      new_segments_.back().point_set().assign(merged_points.begin(), merged_points.end());
       return true;
     }
   }
@@ -172,65 +235,6 @@ void ObstacleDetector::detectCircles() {
     if (c.radius() < p_max_circle_radius_)
       circles_.push_back(c);
   }
-}
-
-void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
-  static bool first_call = true;
-
-  if (first_call) {
-    if (!nh_local_.getParam("frame_id", p_frame_id_))
-      p_frame_id_ = "base";
-
-    if (!nh_local_.getParam("scan_topic", p_scan_topic_))
-      p_scan_topic_ = "scan";
-
-    if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
-      p_pcl_topic_ = "pcl";
-
-    if (!nh_local_.getParam("obstacle_topic", p_obstacle_topic_))
-      p_obstacle_topic_ = "obstacle";
-
-    if (!nh_local_.getParam("marker_topic", p_marker_topic_))
-      p_marker_topic_ = "obstacle_marker";
-
-    if (!nh_local_.getParam("use_scan", p_use_scan_))
-      p_use_scan_ = true;
-
-    if (!nh_local_.getParam("use_pcl", p_use_pcl_))
-      p_use_pcl_ = false;
-
-    if (!nh_local_.getParam("publish_markers", p_publish_markers_))
-      p_publish_markers_ = true;
-
-    first_call = false;
-  }
-
-  if (!nh_local_.getParam("save_snapshot", p_save_snapshot_))
-    p_save_snapshot_ = false;
-
-  if (!nh_local_.getParam("min_group_points", p_min_group_points_))
-    p_min_group_points_ = 3;
-
-  if (!nh_local_.getParam("max_group_distance", p_max_group_distance_))
-    p_max_group_distance_ = 0.100;
-
-  if (!nh_local_.getParam("distance_proportion", p_distance_proportion_))
-    p_distance_proportion_ = 0.006136;
-
-  if (!nh_local_.getParam("max_split_distance", p_max_split_distance_))
-    p_max_split_distance_ = 0.100;
-
-  if (!nh_local_.getParam("max_merge_separation", p_max_merge_separation_))
-    p_max_merge_separation_ = 0.100;
-
-  if (!nh_local_.getParam("max_merge_spread", p_max_merge_spread_))
-    p_max_merge_spread_ = 0.070;
-
-  if (!nh_local_.getParam("max_circle_radius", p_max_circle_radius_))
-    p_max_circle_radius_ = 0.300;
-
-  if (!nh_local_.getParam("radius_enlargement", p_radius_enlargement_))
-    p_radius_enlargement_ = 0.050;
 }
 
 void ObstacleDetector::publishObstacles() {
@@ -282,7 +286,7 @@ void ObstacleDetector::publishMarkers() {
   circle_marker.color.g = 0.0;
   circle_marker.color.b = 1.0;
   circle_marker.color.a = 0.2;
-  circle_marker.lifetime = ros::Duration();
+  circle_marker.lifetime = ros::Duration(0.1);
 
   int i = 0;
   for (const Circle& circle : circles_) {
@@ -316,7 +320,7 @@ void ObstacleDetector::publishMarkers() {
   segments_marker.color.g = 0.0;
   segments_marker.color.b = 0.0;
   segments_marker.color.a = 1.0;
-  segments_marker.lifetime = ros::Duration();
+  segments_marker.lifetime = ros::Duration(0.1);
 
   for (const Segment& segment : segments_) {
     geometry_msgs::Point pt;
@@ -359,8 +363,7 @@ void ObstacleDetector::saveSnapshot() {
 }
 
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "obstacle_detector");
   ObstacleDetector od;
 
