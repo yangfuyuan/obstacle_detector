@@ -35,11 +35,12 @@ private:
   void updateParams(const ros::TimerEvent& event);
 
   void processPoints();
-  void groupAndDetectSegments();
+  void groupPointsAndDetectSegments();
+  bool compareAndMergeSegments(Segment &s1, Segment &s2);
   void detectSegments(std::list<Point>& point_set);
   void mergeSegments();
   void detectCircles();
-  bool compareAndMerge(Segment &s1, Segment &s2);
+  void mergeCircles();
 
   void saveSnapshot();
 
@@ -56,7 +57,6 @@ private:
   // Detector variables
   std::vector<Point> initial_points_;
   std::list<Segment> segments_;
-  std::list<Segment> new_segments_;
   std::list<Circle>  circles_;
 
   // Parameters

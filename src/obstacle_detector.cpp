@@ -106,12 +106,13 @@ void ObstacleDetector::processPoints() {
   segments_.clear();
   circles_.clear();
 
-  groupAndDetectSegments();
+  groupPointsAndDetectSegments();
   mergeSegments();
   detectCircles();
+  mergeCircles();
 
-//  if (p_save_snapshot_)
-//    saveSnapshot();
+  if (p_save_snapshot_)
+    saveSnapshot();
 
   if (p_publish_markers_)
     publishMarkers();
@@ -119,7 +120,7 @@ void ObstacleDetector::processPoints() {
   publishObstacles();
 }
 
-void ObstacleDetector::groupAndDetectSegments() {
+void ObstacleDetector::groupPointsAndDetectSegments() {
   list<Point> point_set;
 
   for (const Point& point : initial_points_) {
@@ -173,28 +174,36 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
 }
 
 void ObstacleDetector::mergeSegments() {
-  new_segments_.clear();
+  bool merged = false;
 
-  for (auto i_ptr = segments_.begin(); i_ptr != segments_.end(); ++i_ptr) {
-    for (auto j_ptr = segments_.begin(); j_ptr != segments_.end(); ++j_ptr) {
-      if (i_ptr != j_ptr) {
-        if (compareAndMerge(*i_ptr, *j_ptr)) {
-          ;
-//          segments_.erase(i_ptr++);
-//          segments_.erase(j_ptr++);
-        }
+  for (auto i = segments_.begin(); i != segments_.end(); ++i) {
+    if (merged) {
+      --i;   // Check the new segment too
+      merged = false;
+    }
+
+    auto j = i;
+    for (++j; j != segments_.end(); ++j) {
+      if (compareAndMergeSegments(*i, *j)) {  // If merged - a new segment appeared at the end of the list
+        auto temp_ptr = i;
+        i = segments_.insert(i, segments_.back()); // i now points to new segment
+        segments_.pop_back();
+        segments_.erase(temp_ptr);
+        segments_.erase(j);
+        merged = true;
+        break;
       }
     }
   }
 }
 
-bool ObstacleDetector::compareAndMerge(Segment& s1, Segment& s2) {
+bool ObstacleDetector::compareAndMergeSegments(Segment& s1, Segment& s2) {
   if (&s1 == &s2)
     return false;
 
   // Segments must be provided counter-clockwise
   if (s1.first_point().cross(s2.first_point()) < 0.0)
-    return compareAndMerge(s2, s1);
+    return compareAndMergeSegments(s2, s1);
 
   if ((s1.last_point() - s2.first_point()).length() < p_max_merge_separation_) {
     list<Point> merged_points;
@@ -207,8 +216,8 @@ bool ObstacleDetector::compareAndMerge(Segment& s1, Segment& s2) {
         s.distanceTo(s1.last_point())  < p_max_merge_spread_ &&
         s.distanceTo(s2.first_point()) < p_max_merge_spread_ &&
         s.distanceTo(s2.last_point())  < p_max_merge_spread_) {
-      new_segments_.push_back(s);
-      new_segments_.back().point_set().assign(merged_points.begin(), merged_points.end());
+      segments_.push_back(s);
+      segments_.back().point_set().assign(merged_points.begin(), merged_points.end());
       return true;
     }
   }
@@ -221,20 +230,21 @@ void ObstacleDetector::detectCircles() {
     Circle c(s);
     c.setRadius(c.radius() + p_radius_enlargement_);
 
-//     Check if two circles are intersecting
-//     TODO: Check if circle can be merged with ANY of circles in the list not just the last one
-    if ((circles_.size() > 0) && (c.radius() > circles_.back().distanceTo(c.center()))) {
-      Circle cx = merge(circles_.back(), c);
-
-      if (cx.radius() < p_max_circle_radius_) {
-        c = cx;
-        circles_.pop_back();
-      }
-    }
-
     if (c.radius() < p_max_circle_radius_)
       circles_.push_back(c);
   }
+}
+
+void ObstacleDetector::mergeCircles() {
+//  // Check if two circles are intersecting
+//  if ((circles_.size() > 0) && (c.radius() > circles_.back().distanceTo(c.center()))) {
+//    Circle cx = merge(circles_.back(), c);
+
+//    if (cx.radius() < p_max_circle_radius_) {
+//      c = cx;
+//      circles_.pop_back();
+//    }
+//  }
 }
 
 void ObstacleDetector::publishObstacles() {
