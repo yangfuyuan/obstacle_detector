@@ -36,11 +36,13 @@ private:
 
   void processPoints();
   void groupPointsAndDetectSegments();
-  bool compareAndMergeSegments(Segment &s1, Segment &s2);
   void detectSegments(std::list<Point>& point_set);
   void mergeSegments();
+  bool compareAndMergeSegments(Segment& s1, Segment& s2);
+
   void detectCircles();
   void mergeCircles();
+  bool compareAndMergeCircles(Circle& c1, Circle& c2);
 
   void saveSnapshot();
 
@@ -70,6 +72,7 @@ private:
   bool p_use_pcl_;                // Use data from point clouds
   bool p_publish_markers_;        // If true, visualisation_markers will be published
   bool p_save_snapshot_;          // If true, the obstacles data is saved in .txt file
+  bool p_use_split_and_merge_;    // If false, iterative closest point is used instead of split and merge
 
   int    p_min_group_points_;     // Miminal number of points in a set to process it further
   double p_distance_proportion_;  // Proportion of allowable distances to the range of a point (based on scan angle increment)

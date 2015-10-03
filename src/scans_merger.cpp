@@ -1,8 +1,8 @@
-#include "scans2pcl.h"
+#include "scans_merger.h"
 
 using namespace obstacle_detector;
 
-void Scans2PCL::updateParams(const ros::TimerEvent& event) {
+void ScansMerger::updateParams(const ros::TimerEvent& event) {
   static bool first_call = true;
 
   if (first_call) {
@@ -31,13 +31,13 @@ void Scans2PCL::updateParams(const ros::TimerEvent& event) {
     p_max_unreceived_scans_ = 1;
 }
 
-Scans2PCL::Scans2PCL() : nh_(), nh_local_("~") {
+ScansMerger::ScansMerger() : nh_(), nh_local_("~") {
   updateParams(ros::TimerEvent());
 
-  front_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_front_scan_topic_, 5, &Scans2PCL::frontScanCallback, this);
-  rear_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_rear_scan_topic_, 5, &Scans2PCL::rearScanCallback, this);
+  front_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_front_scan_topic_, 5, &ScansMerger::frontScanCallback, this);
+  rear_scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_rear_scan_topic_, 5, &ScansMerger::rearScanCallback, this);
   pcl_pub_ = nh_.advertise<sensor_msgs::PointCloud>(p_pcl_topic_, 5);
-  params_tim_ = nh_.createTimer(ros::Duration(0.5), &Scans2PCL::updateParams, this);
+  params_tim_ = nh_.createTimer(ros::Duration(0.5), &ScansMerger::updateParams, this);
 
   first_scan_received_ = false;
   second_scan_received_ = false;
@@ -45,7 +45,7 @@ Scans2PCL::Scans2PCL() : nh_(), nh_local_("~") {
   unreceived_scans2_ = 0;
 }
 
-void Scans2PCL::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
+void ScansMerger::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
   geometry_msgs::Point32 point;
 
   float phi = scan->angle_min;
@@ -71,7 +71,7 @@ void Scans2PCL::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) 
   else unreceived_scans2_++;
 }
 
-void Scans2PCL::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
+void ScansMerger::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
   geometry_msgs::Point32 point;
 
   float phi = scan->angle_min;
@@ -97,7 +97,7 @@ void Scans2PCL::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
   else unreceived_scans1_++;
 }
 
-void Scans2PCL::publishPCL() {
+void ScansMerger::publishPCL() {
   pcl_msg_.header.frame_id = p_frame_id_;
   pcl_msg_.header.stamp = ros::Time::now();
   pcl_pub_.publish(pcl_msg_);
@@ -111,10 +111,10 @@ void Scans2PCL::publishPCL() {
 }
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "scan2pcl");
-  Scans2PCL S2P;
+  ros::init(argc, argv, "scans_merger");
+  ScansMerger S2P;
 
-  ROS_INFO("Starting Scans to PCL Converter.");
+  ROS_INFO("Starting Scans Merger.");
   ros::spin();
 
   return 0;
