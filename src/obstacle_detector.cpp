@@ -1,4 +1,4 @@
-﻿#include "obstacle_detector.h"
+﻿#include "../include/obstacle_detector.h"
 
 using namespace std;
 using namespace obstacle_detector;
@@ -36,6 +36,9 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
 
   if (!nh_local_.getParam("save_snapshot", p_save_snapshot_))
     p_save_snapshot_ = false;
+
+  if (!nh_local_.getParam("use_split_and_merge", p_use_split_and_merge_))
+    p_use_split_and_merge_ = false;
 
   if (!nh_local_.getParam("min_group_points", p_min_group_points_))
     p_min_group_points_ = 3;
@@ -127,20 +130,26 @@ void ObstacleDetector::groupPointsAndDetectSegments() {
     if (point_set.size() != 0) {
       double r = point.length();
 
-      if ((point - point_set.back()).length() > (p_max_group_distance_ + r * p_distance_proportion_)) {
+      if ((point - point_set.back()).lengthSquared() > pow(p_max_group_distance_ + r * p_distance_proportion_, 2)) {
         detectSegments(point_set);
         point_set.clear();
       }
     }
     point_set.push_back(point);
   }
+
+  detectSegments(point_set); // Check the last point set too!
 }
 
 void ObstacleDetector::detectSegments(list<Point> &point_set) {
   if (point_set.size() < p_min_group_points_)
     return;
 
-  Segment segment = fitSegment(point_set);
+  Segment segment(Point(0.0, 0.0), Point(1.0, 0.0));
+  if (p_use_split_and_merge_)
+    segment = fitSegment(point_set);
+  else // Use Iterative End Point Fit
+    segment = Segment(point_set.front(), point_set.back());
 
   list<Point>::iterator set_divider;
   double max_distance = 0.0;
@@ -167,7 +176,10 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
 
     detectSegments(subset1);
     detectSegments(subset2);
-  } else {  // Add the segment  
+  } else {  // Add the segment
+    if (!p_use_split_and_merge_)
+      segment = fitSegment(point_set);
+
     segments_.push_back(segment);
     segments_.back().point_set().assign(point_set.begin(), point_set.end());
   }
@@ -236,15 +248,41 @@ void ObstacleDetector::detectCircles() {
 }
 
 void ObstacleDetector::mergeCircles() {
-//  // Check if two circles are intersecting
-//  if ((circles_.size() > 0) && (c.radius() > circles_.back().distanceTo(c.center()))) {
-//    Circle cx = merge(circles_.back(), c);
+  bool merged = false;
 
-//    if (cx.radius() < p_max_circle_radius_) {
-//      c = cx;
-//      circles_.pop_back();
-//    }
-//  }
+  for (auto i = circles_.begin(); i != circles_.end(); ++i) {
+    if (merged) {
+      --i;   // Check the new circle too
+      merged = false;
+    }
+
+    auto j = i;
+    for (++j; j != circles_.end(); ++j) {
+      if (compareAndMergeCircles(*i, *j)) {  // If merged - a new circle appeared at the end of the list
+        auto temp_ptr = i;
+        i = circles_.insert(i, circles_.back()); // i now points to new segment
+        circles_.pop_back();
+        circles_.erase(temp_ptr);
+        circles_.erase(j);
+        merged = true;
+        break;
+      }
+    }
+  }
+}
+
+bool ObstacleDetector::compareAndMergeCircles(Circle& c1, Circle& c2) {
+  if (pow(c1.radius() + c2.radius(), 2) < (c2.center() - c1.center()).lengthSquared()) {
+    Segment s(c1.center(), c2.center());
+    Circle c(s);
+    c.setRadius(c.radius() + max(c1.radius(), c2.radius()));
+
+    if (c.radius() < p_max_circle_radius_) {
+      circles_.push_back(c);
+      return true;
+    }
+  }
+  return false;
 }
 
 void ObstacleDetector::publishObstacles() {

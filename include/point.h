@@ -8,8 +8,9 @@
 namespace obstacle_detector
 {
 
-double signum(double d) { return (d < 0.0) ? -1.0 : 1.0; }
-double abs(double d) { return (d < 0.0) ? -d : d; }
+double signum(double x) { return (x < 0.0) ? -1.0 : 1.0; }
+double abs(double x) { return (x < 0.0) ? -x : x; }
+double max(double x, double y) { return (x > y) ? x : y; }
 const double pi = 3.14159265;
 
 class Point

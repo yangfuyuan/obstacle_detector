@@ -52,7 +52,8 @@ configures transformations and starts Rviz for data visualisation.
 
   <node name="world_to_base" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0 0 0 0 0 0 /world /base 100"/>
 
-<!--  <node name="scan_matching" pkg="laser_scan_matcher" type="laser_scan_matcher_node" respawn="false" required="false"  output="screen">
+<!--  
+  <node name="scan_matching" pkg="laser_scan_matcher" type="laser_scan_matcher_node" respawn="false" required="false"  output="screen">
     <param name="fixed_frame" value="/world"/>
     <param name="base_frame"  value="/base"/>
     

@@ -1,5 +1,5 @@
-#ifndef SCANS2PCL_H
-#define SCANS2PCL_H
+#ifndef SCANS_MERGER_H
+#define SCANS_MERGER_H
 
 #include <cmath>
 #include <ros/ros.h>
@@ -10,10 +10,10 @@
 namespace obstacle_detector
 {
 
-class Scans2PCL
+class ScansMerger
 {
 public:
-  Scans2PCL();
+  ScansMerger();
 
 private:
   void frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -49,4 +49,4 @@ private:
 
 }
 
-#endif // SCANS2PCL_H
+#endif // SCANS_MERGER_H

@@ -1,7 +1,7 @@
-<!-- Launches scans2pcl converter with default values of parameters. -->
+<!-- Launches scans_merger with default values of parameters. -->
 
 <launch>
-  <node name="scans2pcl" pkg="obstacle_detector" type="scans2pcl" respawn="false" required="false" output="screen">
+  <node name="scans_merger" pkg="obstacle_detector" type="scans_merger" respawn="false" required="false" output="screen">
     <param name="frame_id"         type="string" value="base"/>
     <param name="front_scan_topic" type="string" value="front_scan"/>
     <param name="rear_scan_topic"  type="string" value="rear_scan"/>

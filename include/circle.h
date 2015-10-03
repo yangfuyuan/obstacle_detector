@@ -43,13 +43,6 @@ private:
   std::list<Point> point_set_;
 };
 
-Circle merge(const Circle& c1, const Circle& c2) {
-  Segment s(c1.center(), c2.center());
-  Circle c(s);
-  c.setRadius(c.radius() + (c1.radius() > c2.radius() ? c1.radius() : c2.radius()));
-  return c;
-}
-
 //Circle(const Point& p1, const Point& p2, const Point& p3) {
 //  double a = (p2 - p3).lengthSquared() * (p1 - p2).dot(p1 - p3) / (2.0 * pow((p1 - p2).cross(p2 - p3), 2.0));
 //  double b = (p1 - p3).lengthSquared() * (p2 - p1).dot(p2 - p3) / (2.0 * pow((p1 - p2).cross(p2 - p3), 2.0));
