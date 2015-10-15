@@ -4,7 +4,6 @@ prepares scan matching and runs the obstacle detector.
 It also opens Rviz for data visualisation. 
 -->
 <launch>
-
   <node name="front_hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" required="false" output="screen">
     <param name="port" type="string" value="/dev/ttyACM0"/>
     <param name="frame_id" type="string" value="front_laser"/>
