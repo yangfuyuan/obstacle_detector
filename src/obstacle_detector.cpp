@@ -112,7 +112,7 @@ void ObstacleDetector::processPoints() {
   groupPointsAndDetectSegments();
   mergeSegments();
   detectCircles();
-  mergeCircles();
+//  mergeCircles();
 
   if (p_save_snapshot_)
     saveSnapshot();
