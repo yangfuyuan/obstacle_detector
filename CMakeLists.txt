@@ -22,11 +22,18 @@ add_executable(obstacle_detector src/obstacle_detector.cpp include/obstacle_dete
 target_link_libraries(obstacle_detector ${catkin_LIBRARIES} /usr/lib/libarmadillo.so)
 add_dependencies(obstacle_detector ${PROJECT_NAME}_gencpp)
 
+
 add_executable(static_scan_publisher src/static_scan_publisher.cpp)
 target_link_libraries(static_scan_publisher ${catkin_LIBRARIES})
 add_dependencies(static_scan_publisher ${PROJECT_NAME}_gencpp)
 
+
 add_executable(scans_merger src/scans_merger.cpp include/scans_merger.h)
 target_link_libraries(scans_merger ${catkin_LIBRARIES})
 add_dependencies(scans_merger ${PROJECT_NAME}_gencpp)
+
+
+#add_executable(obstacle_tracker src/obstacle_tracker.cpp include/obstacle_tracker.h)
+#target_link_libraries(obstacle_tracker ${catkin_LIBRARIES})
+#add_dependencies(obstacle_tracker ${PROJECT_NAME}_gencpp)
 
