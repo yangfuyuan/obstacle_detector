@@ -19,7 +19,7 @@ include_directories(${catkin_INCLUDE_DIRS} include)
 
 add_executable(obstacle_detector src/obstacle_detector.cpp include/obstacle_detector.h
                include/point.h include/segment.h include/circle.h include/figure_fitting.h)
-target_link_libraries(obstacle_detector ${catkin_LIBRARIES} /usr/lib/libarmadillo.so)
+target_link_libraries(obstacle_detector ${catkin_LIBRARIES} /usr/local/lib/libarmadillo.so)
 add_dependencies(obstacle_detector ${PROJECT_NAME}_gencpp)
 
 
