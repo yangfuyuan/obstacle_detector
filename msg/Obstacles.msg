@@ -1,3 +1,5 @@
+Header header
+
 # Segments
 geometry_msgs/Point[] first_points
 geometry_msgs/Point[] last_points

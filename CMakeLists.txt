@@ -3,16 +3,16 @@ project(obstacle_detector)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy tf sensor_msgs visualization_msgs geometry_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy tf std_msgs geometry_msgs sensor_msgs visualization_msgs message_generation)
 find_package(Armadillo REQUIRED)
 
 add_message_files(FILES Obstacles.msg)
-generate_messages(DEPENDENCIES geometry_msgs)
+generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(
    INCLUDE_DIRS include
    LIBRARIES obstacle_detector
-   CATKIN_DEPENDS roscpp rospy tf sensor_msgs visualization_msgs geometry_msgs message_runtime
+   CATKIN_DEPENDS roscpp rospy tf std_msgs geometry_msgs sensor_msgs visualization_msgs message_runtime
    DEPENDS system_lib
 )
 

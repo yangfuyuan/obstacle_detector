@@ -1,3 +1,38 @@
+/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2015, Poznan University of Technology
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Author: Mateusz Przybyla
+ */
+
 #ifndef OBSTACLE_DETECTOR_H
 #define OBSTACLE_DETECTOR_H
 
@@ -8,11 +43,13 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Point32.h>
+#include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <obstacle_detector/Obstacles.h>
+#include <tf/transform_listener.h>
 
 #include "point.h"
 #include "segment.h"
@@ -44,6 +81,7 @@ private:
   void mergeCircles();
   bool compareAndMergeCircles(Circle& c1, Circle& c2);
 
+  void transformToWorld();
   void saveSnapshot();
 
   // ROS handlers
@@ -56,13 +94,16 @@ private:
   ros::Publisher  obstacles_pub_;
   ros::Timer      params_tim_;
 
+  tf::TransformListener tf_listener_;
+
   // Detector variables
   std::vector<Point> initial_points_;
   std::list<Segment> segments_;
   std::list<Circle>  circles_;
 
   // Parameters
-  std::string p_frame_id_;        // Name of the coordinate frame for markers
+  std::string p_world_frame_;     // Name of the world coordinate frame
+  std::string p_scanner_frame_;    // Name of the scanner coordinate frame
   std::string p_scan_topic_;      // Name of the topic of scans subscription
   std::string p_pcl_topic_;       // Name of the topic of scans subscription
   std::string p_obstacle_topic_;  // Name of the topic of obstacles publishing

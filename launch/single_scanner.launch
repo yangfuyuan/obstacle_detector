@@ -4,6 +4,7 @@ prepares scan matching and runs the obstacle detector.
 It also opens Rviz for data visualisation. 
 -->
 <launch>
+<!--
   <node name="front_hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" required="false" output="screen">
     <param name="port" type="string" value="/dev/ttyACM0"/>
     <param name="frame_id" type="string" value="front_laser"/>
@@ -19,16 +20,13 @@ It also opens Rviz for data visualisation.
 
     <remap from="scan" to="front_scan"/>
   </node>
-
-<!--
-  <node name="static_scan_publisher" pkg="obstacle_detector" type="static_scan_publisher" respawn="false" required="false" output="screen">
-    <remap from="scan" to="front_scan"/>
-  </node>
 -->
 
-  <node name="base_to_front_laser" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0 0 0 0 0 0 base front_laser 100"/>
+  <node name="static_scan_publisher" pkg="obstacle_detector" type="static_scan_publisher" respawn="false" required="false" output="screen">
+    <!--<remap from="scan" to="front_scan"/>-->
+  </node>
 
-  <node name="world_to_base" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0 0 0 0 0 0 world base 100"/>
+  <node name="world_to_scanner" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0 0 0 0 0 0 world scanner 100"/>
  
 <!--  
   <node name="scan_matching" pkg="laser_scan_matcher" type="laser_scan_matcher_node" respawn="false" required="false"  output="screen">
@@ -49,8 +47,9 @@ It also opens Rviz for data visualisation.
 -->
 
   <node name="obstacle_detector" pkg="obstacle_detector" type="obstacle_detector" respawn="false" required="false" output="screen">
-    <param name="frame_id"       type="string" value="base"/>
-    <param name="scan_topic"     type="string" value="front_scan"/>
+    <param name="world_frame"    type="string" value="world"/>
+    <param name="scanner_frame"  type="string" value="scanner"/>
+    <param name="scan_topic"     type="string" value="scan"/>
     <param name="pcl_topic"      type="string" value="pcl"/>
     <param name="obstacle_topic" type="string" value="obstacles"/>
     <param name="marker_topic"   type="string" value="obstacle_markers"/>

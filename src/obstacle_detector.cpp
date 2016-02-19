@@ -1,4 +1,39 @@
-﻿#include "../include/obstacle_detector.h"
+﻿/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2015, Poznan University of Technology
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Author: Mateusz Przybyla
+ */
+
+#include "../include/obstacle_detector.h"
 
 using namespace std;
 using namespace obstacle_detector;
@@ -7,8 +42,11 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
   static bool first_call = true;
 
   if (first_call) {
-    if (!nh_local_.getParam("frame_id", p_frame_id_))
-      p_frame_id_ = "base";
+    if (!nh_local_.getParam("world_frame", p_world_frame_))
+      p_world_frame_ = "world";
+
+    if (!nh_local_.getParam("scanner_frame", p_scanner_frame_))
+      p_scanner_frame_ = "scanner";
 
     if (!nh_local_.getParam("scan_topic", p_scan_topic_))
       p_scan_topic_ = "scan";
@@ -113,6 +151,8 @@ void ObstacleDetector::processPoints() {
   mergeSegments();
   detectCircles();
 //  mergeCircles();
+
+  transformToWorld();
 
   if (p_save_snapshot_)
     saveSnapshot();
@@ -285,8 +325,40 @@ bool ObstacleDetector::compareAndMergeCircles(Circle& c1, Circle& c2) {
   return false;
 }
 
+void ObstacleDetector::transformToWorld() {
+  geometry_msgs::PointStamped point_l;  // Point in local (scanner) coordinate frame
+  geometry_msgs::PointStamped point_w;  // Point in global (world) coordinate frame
+
+  point_l.header.stamp = ros::Time::now();
+  point_l.header.frame_id = p_scanner_frame_;
+
+  point_w.header.stamp = ros::Time::now();
+  point_w.header.frame_id = p_world_frame_;
+
+  for (Circle& circle : circles_) {
+    point_l.point.x = circle.center().x;
+    point_l.point.y = circle.center().y;
+    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+    circle.setCenter(point_w.point.x, point_w.point.y);
+  }
+
+  for (Segment& s : segments_) {
+    point_l.point.x = s.first_point().x;
+    point_l.point.y = s.first_point().y;
+    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+    s.setFirstPoint(point_w.point.x, point_w.point.y);
+
+    point_l.point.x = s.last_point().x;
+    point_l.point.y = s.last_point().y;
+    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+    s.setLastPoint(point_w.point.x, point_w.point.y);
+  }
+}
+
 void ObstacleDetector::publishObstacles() {
   Obstacles obst_msg;
+  obst_msg.header.stamp = ros::Time::now();
+  obst_msg.header.frame_id = p_world_frame_;
 
   for (const Segment& s : segments_) {
     geometry_msgs::Point p;
@@ -314,7 +386,7 @@ void ObstacleDetector::publishMarkers() {
   visualization_msgs::MarkerArray marker_array;
 
   visualization_msgs::Marker circle_marker;
-  circle_marker.header.frame_id = p_frame_id_;
+  circle_marker.header.frame_id = p_world_frame_;
   circle_marker.header.stamp = ros::Time::now();
   circle_marker.ns = "circles";
   circle_marker.id = 0;
@@ -348,7 +420,7 @@ void ObstacleDetector::publishMarkers() {
   }
 
   visualization_msgs::Marker segments_marker;
-  segments_marker.header.frame_id = p_frame_id_;
+  segments_marker.header.frame_id = p_world_frame_;
   segments_marker.header.stamp = ros::Time::now();
   segments_marker.ns = "segments";
   segments_marker.id = 0;
