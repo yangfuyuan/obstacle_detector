@@ -152,7 +152,7 @@ void ObstacleDetector::processPoints() {
   detectCircles();
 //  mergeCircles();
 
-  transformToWorld();
+  //transformToWorld();
 
   if (p_save_snapshot_)
     saveSnapshot();
@@ -358,7 +358,7 @@ void ObstacleDetector::transformToWorld() {
 void ObstacleDetector::publishObstacles() {
   Obstacles obst_msg;
   obst_msg.header.stamp = ros::Time::now();
-  obst_msg.header.frame_id = p_world_frame_;
+  obst_msg.header.frame_id = p_scanner_frame_;
 
   for (const Segment& s : segments_) {
     geometry_msgs::Point p;
@@ -386,7 +386,7 @@ void ObstacleDetector::publishMarkers() {
   visualization_msgs::MarkerArray marker_array;
 
   visualization_msgs::Marker circle_marker;
-  circle_marker.header.frame_id = p_world_frame_;
+  circle_marker.header.frame_id = p_scanner_frame_;
   circle_marker.header.stamp = ros::Time::now();
   circle_marker.ns = "circles";
   circle_marker.id = 0;
@@ -420,7 +420,7 @@ void ObstacleDetector::publishMarkers() {
   }
 
   visualization_msgs::Marker segments_marker;
-  segments_marker.header.frame_id = p_world_frame_;
+  segments_marker.header.frame_id = p_scanner_frame_;
   segments_marker.header.stamp = ros::Time::now();
   segments_marker.ns = "segments";
   segments_marker.id = 0;

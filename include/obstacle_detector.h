@@ -103,7 +103,7 @@ private:
 
   // Parameters
   std::string p_world_frame_;     // Name of the world coordinate frame
-  std::string p_scanner_frame_;    // Name of the scanner coordinate frame
+  std::string p_scanner_frame_;   // Name of the scanner coordinate frame
   std::string p_scan_topic_;      // Name of the topic of scans subscription
   std::string p_pcl_topic_;       // Name of the topic of scans subscription
   std::string p_obstacle_topic_;  // Name of the topic of obstacles publishing

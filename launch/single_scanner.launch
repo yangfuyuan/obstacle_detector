@@ -4,10 +4,10 @@ prepares scan matching and runs the obstacle detector.
 It also opens Rviz for data visualisation. 
 -->
 <launch>
-<!--
+
   <node name="front_hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" required="false" output="screen">
     <param name="port" type="string" value="/dev/ttyACM0"/>
-    <param name="frame_id" type="string" value="front_laser"/>
+    <param name="frame_id" type="string" value="scanner"/>
 
     <param name="intensity" type="bool" value="false"/>
     <param name="calibrate_time" type="bool" value="true"/>
@@ -17,14 +17,13 @@ It also opens Rviz for data visualisation.
     <param name="skip" value="0"/>
     <param name="time_offset" value="0.0"/>
     <param name="cluster" value="1"/>
+  </node>
 
+<!--
+  <node name="static_scan_publisher" pkg="obstacle_detector" type="static_scan_publisher" respawn="false" required="false" output="screen">
     <remap from="scan" to="front_scan"/>
   </node>
 -->
-
-  <node name="static_scan_publisher" pkg="obstacle_detector" type="static_scan_publisher" respawn="false" required="false" output="screen">
-    <!--<remap from="scan" to="front_scan"/>-->
-  </node>
 
   <node name="world_to_scanner" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" args="0 0 0 0 0 0 world scanner 100"/>
  

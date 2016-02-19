@@ -36,6 +36,8 @@
 #ifndef FIGURE_FITTING_H
 #define FIGURE_FITTING_H
 
+#define ARMA_DONT_USE_CXX11
+
 #include <armadillo>
 #include <cassert>
 #include <list>
