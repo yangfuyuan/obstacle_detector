@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef OBSTACLE_DETECTOR_H
-#define OBSTACLE_DETECTOR_H
+#pragma once
 
 #include <list>
 #include <vector>
@@ -48,8 +47,8 @@
 #include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <obstacle_detector/Obstacles.h>
 #include <tf/transform_listener.h>
+#include <obstacle_detector/Obstacles.h>
 
 #include "point.h"
 #include "segment.h"
@@ -67,8 +66,6 @@ public:
 private:
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl);
-  void publishObstacles();
-  void publishMarkers();
   void updateParams(const ros::TimerEvent& event);
 
   void processPoints();
@@ -80,6 +77,9 @@ private:
   void detectCircles();
   void mergeCircles();
   bool compareAndMergeCircles(Circle& c1, Circle& c2);
+
+  void publishObstacles();
+  void publishMarkers();
 
   void transformToWorld();
   void saveSnapshot();
@@ -114,6 +114,7 @@ private:
   bool p_publish_markers_;        // If true, visualisation_markers will be published
   bool p_save_snapshot_;          // If true, the obstacles data is saved in .txt file
   bool p_use_split_and_merge_;    // If false, iterative closest point is used instead of split and merge
+  bool p_transform_to_world;      // Transform obstacles to world coordinate frame
 
   int    p_min_group_points_;     // Miminal number of points in a set to process it further
   double p_distance_proportion_;  // Proportion of allowable distances to the range of a point (based on scan angle increment)
@@ -127,5 +128,3 @@ private:
 };
 
 }
-
-#endif // OBSTACLE_DETECTOR_H

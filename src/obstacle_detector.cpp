@@ -66,6 +66,9 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
     if (!nh_local_.getParam("use_pcl", p_use_pcl_))
       p_use_pcl_ = false;
 
+    if (!nh_local_.getParam("transform_to_world", p_transform_to_world))
+      p_transform_to_world = false;
+
     if (!nh_local_.getParam("publish_markers", p_publish_markers_))
       p_publish_markers_ = true;
 
@@ -116,7 +119,7 @@ ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
 
   obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacle_topic_, 5);
 
-  params_tim_ = nh_.createTimer(ros::Duration(0.5), &ObstacleDetector::updateParams, this);
+  params_tim_ = nh_.createTimer(ros::Duration(1.0), &ObstacleDetector::updateParams, this);
 }
 
 void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -152,7 +155,8 @@ void ObstacleDetector::processPoints() {
   detectCircles();
 //  mergeCircles();
 
-  //transformToWorld();
+  if (p_transform_to_world)
+    transformToWorld();
 
   if (p_save_snapshot_)
     saveSnapshot();
@@ -170,7 +174,7 @@ void ObstacleDetector::groupPointsAndDetectSegments() {
     if (point_set.size() != 0) {
       double r = point.length();
 
-      if ((point - point_set.back()).lengthSquared() > pow(p_max_group_distance_ + r * p_distance_proportion_, 2)) {
+      if ((point - point_set.back()).lengthSquared() > pow(p_max_group_distance_ + r * p_distance_proportion_, 2.0)) {
         detectSegments(point_set);
         point_set.clear();
       }
@@ -181,7 +185,7 @@ void ObstacleDetector::groupPointsAndDetectSegments() {
   detectSegments(point_set); // Check the last point set too!
 }
 
-void ObstacleDetector::detectSegments(list<Point> &point_set) {
+void ObstacleDetector::detectSegments(list<Point>& point_set) {
   if (point_set.size() < p_min_group_points_)
     return;
 
@@ -228,9 +232,10 @@ void ObstacleDetector::detectSegments(list<Point> &point_set) {
 void ObstacleDetector::mergeSegments() {
   bool merged = false;
 
-  for (auto i = segments_.begin(); i != segments_.end(); ++i) {
+  // TODO: Check this
+  for (auto i = segments_.begin(); i != --segments_.end(); ++i) {
     if (merged) {
-      --i;   // Check the new segment too
+      --i;   // Check the new segment again
       merged = false;
     }
 
@@ -238,10 +243,10 @@ void ObstacleDetector::mergeSegments() {
     for (++j; j != segments_.end(); ++j) {
       if (compareAndMergeSegments(*i, *j)) {  // If merged - a new segment appeared at the end of the list
         auto temp_ptr = i;
-        i = segments_.insert(i, segments_.back()); // i now points to new segment
-        segments_.pop_back();
-        segments_.erase(temp_ptr);
-        segments_.erase(j);
+        i = segments_.insert(i, segments_.back()); // Copy new segment in place; i now points to new segment
+        segments_.pop_back();       // Remove the new segment from the back of the list
+        segments_.erase(temp_ptr);  // Remove the first merged segment
+        segments_.erase(j);         // Remove the second merged segment
         merged = true;
         break;
       }
@@ -335,30 +340,42 @@ void ObstacleDetector::transformToWorld() {
   point_w.header.stamp = ros::Time::now();
   point_w.header.frame_id = p_world_frame_;
 
-  for (Circle& circle : circles_) {
-    point_l.point.x = circle.center().x;
-    point_l.point.y = circle.center().y;
-    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
-    circle.setCenter(point_w.point.x, point_w.point.y);
+  try {
+    tf_listener_.waitForTransform(p_world_frame_, p_scanner_frame_, ros::Time::now(), ros::Duration(3.0));
+
+    for (Circle& circle : circles_) {
+      point_l.point.x = circle.center().x;
+      point_l.point.y = circle.center().y;
+      tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+      circle.setCenter(point_w.point.x, point_w.point.y);
+    }
+
+    for (Segment& s : segments_) {
+      point_l.point.x = s.first_point().x;
+      point_l.point.y = s.first_point().y;
+      tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+      s.setFirstPoint(point_w.point.x, point_w.point.y);
+
+      point_l.point.x = s.last_point().x;
+      point_l.point.y = s.last_point().y;
+      tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+      s.setLastPoint(point_w.point.x, point_w.point.y);
+    }
   }
-
-  for (Segment& s : segments_) {
-    point_l.point.x = s.first_point().x;
-    point_l.point.y = s.first_point().y;
-    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
-    s.setFirstPoint(point_w.point.x, point_w.point.y);
-
-    point_l.point.x = s.last_point().x;
-    point_l.point.y = s.last_point().y;
-    tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
-    s.setLastPoint(point_w.point.x, point_w.point.y);
+  catch (tf::TransformException ex) {
+    ROS_ERROR("%s",ex.what());
+    ros::Duration(1.0).sleep();
   }
 }
 
 void ObstacleDetector::publishObstacles() {
   Obstacles obst_msg;
   obst_msg.header.stamp = ros::Time::now();
-  obst_msg.header.frame_id = p_scanner_frame_;
+
+  if (p_transform_to_world)
+    obst_msg.header.frame_id = p_world_frame_;
+  else
+    obst_msg.header.frame_id = p_scanner_frame_;
 
   for (const Segment& s : segments_) {
     geometry_msgs::Point p;
@@ -386,8 +403,13 @@ void ObstacleDetector::publishMarkers() {
   visualization_msgs::MarkerArray marker_array;
 
   visualization_msgs::Marker circle_marker;
-  circle_marker.header.frame_id = p_scanner_frame_;
   circle_marker.header.stamp = ros::Time::now();
+
+  if (p_transform_to_world)
+    circle_marker.header.frame_id = p_world_frame_;
+  else
+    circle_marker.header.frame_id = p_scanner_frame_;
+
   circle_marker.ns = "circles";
   circle_marker.id = 0;
   circle_marker.type = visualization_msgs::Marker::CYLINDER;
@@ -420,8 +442,13 @@ void ObstacleDetector::publishMarkers() {
   }
 
   visualization_msgs::Marker segments_marker;
-  segments_marker.header.frame_id = p_scanner_frame_;
   segments_marker.header.stamp = ros::Time::now();
+
+  if (p_transform_to_world)
+    segments_marker.header.frame_id = p_world_frame_;
+  else
+    segments_marker.header.frame_id = p_scanner_frame_;
+
   segments_marker.ns = "segments";
   segments_marker.id = 0;
   segments_marker.type = visualization_msgs::Marker::LINE_LIST;
