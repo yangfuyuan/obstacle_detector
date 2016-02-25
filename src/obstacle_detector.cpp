@@ -67,7 +67,7 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
       p_use_pcl_ = false;
 
     if (!nh_local_.getParam("transform_to_world", p_transform_to_world))
-      p_transform_to_world = false;
+      p_transform_to_world = true;
 
     if (!nh_local_.getParam("publish_markers", p_publish_markers_))
       p_publish_markers_ = true;
