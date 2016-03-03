@@ -50,10 +50,10 @@
 #include <tf/transform_listener.h>
 #include <obstacle_detector/Obstacles.h>
 
-#include "point.h"
-#include "segment.h"
-#include "circle.h"
-#include "figure_fitting.h"
+#include "../include/point.h"
+#include "../include/segment.h"
+#include "../include/circle.h"
+#include "../include/figure_fitting.h"
 
 namespace obstacle_detector
 {
@@ -106,13 +106,12 @@ private:
   std::string p_scanner_frame_;   // Name of the scanner coordinate frame
   std::string p_scan_topic_;      // Name of the topic of scans subscription
   std::string p_pcl_topic_;       // Name of the topic of scans subscription
-  std::string p_obstacle_topic_;  // Name of the topic of obstacles publishing
-  std::string p_marker_topic_;    // Name of the topic of markers publishing
+  std::string p_obstacles_topic_; // Name of the topic of obstacles publishing
+  std::string p_markers_topic_;   // Name of the topic of markers publishing
 
   bool p_use_scan_;               // Use data from scans
   bool p_use_pcl_;                // Use data from point clouds
   bool p_publish_markers_;        // If true, visualisation_markers will be published
-  bool p_save_snapshot_;          // If true, the obstacles data is saved in .txt file
   bool p_use_split_and_merge_;    // If false, iterative closest point is used instead of split and merge
   bool p_transform_to_world;      // Transform obstacles to world coordinate frame
 
@@ -125,6 +124,12 @@ private:
   double p_max_merge_spread_;     // Maximal allowable spread of initial segments around merged segment
   double p_max_circle_radius_;    // Maximal allowable radius of a detected circle
   double p_radius_enlargement_;   // Additional boundary for the obstacle
+
+  double p_max_scanner_range_;    // Restrictions on laser scanner
+  double p_max_x_range_;          // Restrictions on world coordinates
+  double p_min_x_range_;
+  double p_max_y_range_;
+  double p_min_y_range_;
 };
 
-}
+} // namespace obstacle_detector

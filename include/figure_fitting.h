@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef FIGURE_FITTING_H
-#define FIGURE_FITTING_H
+#pragma once
 
 #define ARMA_DONT_USE_CXX11
 
@@ -138,5 +137,3 @@ Circle fitCircle(const std::list<Point>& point_set)
 }
 
 } // namespace obstacle_detector
-
-#endif // FIGURE_FITTING_H

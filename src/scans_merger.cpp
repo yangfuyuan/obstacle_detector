@@ -78,6 +78,9 @@ ScansMerger::ScansMerger() : nh_(), nh_local_("~") {
   second_scan_received_ = false;
   unreceived_scans1_ = 0;
   unreceived_scans2_ = 0;
+
+  ROS_INFO("Starting Scans Merger.");
+  ros::spin();
 }
 
 void ScansMerger::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -148,9 +151,5 @@ void ScansMerger::publishPCL() {
 int main(int argc, char **argv) {
   ros::init(argc, argv, "scans_merger");
   ScansMerger S2P;
-
-  ROS_INFO("Starting Scans Merger.");
-  ros::spin();
-
   return 0;
 }

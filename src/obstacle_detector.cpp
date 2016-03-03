@@ -54,11 +54,11 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
     if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
       p_pcl_topic_ = "pcl";
 
-    if (!nh_local_.getParam("obstacle_topic", p_obstacle_topic_))
-      p_obstacle_topic_ = "obstacles";
+    if (!nh_local_.getParam("obstacles_topic", p_obstacles_topic_))
+      p_obstacles_topic_ = "obstacles";
 
-    if (!nh_local_.getParam("marker_topic", p_marker_topic_))
-      p_marker_topic_ = "obstacle_markers";
+    if (!nh_local_.getParam("markers_topic", p_markers_topic_))
+      p_markers_topic_ = "obstacle_markers";
 
     if (!nh_local_.getParam("use_scan", p_use_scan_))
       p_use_scan_ = true;
@@ -74,9 +74,6 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
 
     first_call = false;
   }
-
-  if (!nh_local_.getParam("save_snapshot", p_save_snapshot_))
-    p_save_snapshot_ = false;
 
   if (!nh_local_.getParam("use_split_and_merge", p_use_split_and_merge_))
     p_use_split_and_merge_ = false;
@@ -104,6 +101,21 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
 
   if (!nh_local_.getParam("radius_enlargement", p_radius_enlargement_))
     p_radius_enlargement_ = 0.050;
+
+  if (!nh_local_.getParam("max_scanner_range", p_max_scanner_range_))
+    p_max_scanner_range_ = 5.0;
+
+  if (!nh_local_.getParam("max_x_range", p_max_x_range_))
+    p_max_x_range_ = 2.0;
+
+  if (!nh_local_.getParam("min_x_range", p_min_x_range_))
+    p_min_x_range_ = -2.0;
+
+  if (!nh_local_.getParam("max_y_range", p_max_y_range_))
+    p_max_y_range_ = 1.0;
+
+  if (!nh_local_.getParam("min_y_range", p_min_y_range_))
+    p_min_y_range_ = -1.0;
 }
 
 ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
@@ -115,11 +127,14 @@ ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
     pcl_sub_  = nh_.subscribe<sensor_msgs::PointCloud>(p_pcl_topic_, 5, &ObstacleDetector::pclCallback, this);
 
   if (p_publish_markers_)
-    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(p_marker_topic_, 5);
+    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(p_markers_topic_, 5);
 
-  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacle_topic_, 5);
+  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacles_topic_, 5);
 
   params_tim_ = nh_.createTimer(ros::Duration(1.0), &ObstacleDetector::updateParams, this);
+
+  ROS_INFO("Obstacle Detector [OK]");
+  ros::spin();
 }
 
 void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -130,7 +145,7 @@ void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan
   for (const float r : scan->ranges) {
     phi += scan->angle_increment;
 
-    if (r >= scan->range_min && r <= scan->range_max)
+    if (r >= scan->range_min && r <= scan->range_max && r <= p_max_scanner_range_)
       initial_points_.push_back(Point::fromPoolarCoords(r, phi));
   }
 
@@ -141,7 +156,8 @@ void ObstacleDetector::pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl)
   initial_points_.clear();
 
   for (const geometry_msgs::Point32& p : pcl->points)
-    initial_points_.push_back(Point(p.x, p.y));
+    if (Point(p.x, p.y).lengthSquared() <= pow(p_max_scanner_range_, 2.0))
+      initial_points_.push_back(Point(p.x, p.y));
 
   processPoints();
 }
@@ -157,9 +173,6 @@ void ObstacleDetector::processPoints() {
 
   if (p_transform_to_world)
     transformToWorld();
-
-  if (p_save_snapshot_)
-    saveSnapshot();
 
   if (p_publish_markers_)
     publishMarkers();
@@ -343,11 +356,19 @@ void ObstacleDetector::transformToWorld() {
   try {
     tf_listener_.waitForTransform(p_world_frame_, p_scanner_frame_, ros::Time::now(), ros::Duration(3.0));
 
-    for (Circle& circle : circles_) {
-      point_l.point.x = circle.center().x;
-      point_l.point.y = circle.center().y;
-      tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
-      circle.setCenter(point_w.point.x, point_w.point.y);
+    for (auto it = circles_.begin(); it != circles_.end(); ++it) { // (Circle& circle : circles_) {
+      if (it->center().x < p_max_x_range_ && it->center().x > p_min_x_range_ &&
+          it->center().y < p_max_y_range_ && it->center().y > p_min_y_range_)
+      {
+        point_l.point.x = it->center().x;
+        point_l.point.y = it->center().y;
+        tf_listener_.transformPoint(p_world_frame_, point_l, point_w);
+        it->setCenter(point_w.point.x, point_w.point.y);
+      }
+      else {
+        it = circles_.erase(it);
+        --it;
+      }
     }
 
     for (Segment& s : segments_) {
@@ -485,37 +506,8 @@ void ObstacleDetector::publishMarkers() {
   markers_pub_.publish(marker_array);
 }
 
-void ObstacleDetector::saveSnapshot() {
-  fstream file;
-  file.open("/home/tysik/Obstacles.txt", fstream::out);
-
-  std::cout.precision(6);
-  file << fixed;
-
-  file << "Segments: (" << segments_.size() << ")" << endl;
-  file << "first.x \t first.y \t last.x \t last.y" << endl << "---" << endl;
-  for (const Segment& segment : segments_)
-    file << segment << endl;
-
-  file << endl;
-  file << "Circles: (" << circles_.size() << ")" << endl;
-  file << "centre.x \t centre.y \t radius" << endl << "---" << endl;
-  for (const Circle& circle : circles_)
-    file << circle << endl;
-
-  file.close();
-
-  nh_local_.setParam("save_snapshot", false);
-  p_save_snapshot_ = false;
-}
-
-
 int main(int argc, char** argv) {
   ros::init(argc, argv, "obstacle_detector");
   ObstacleDetector od;
-
-  ROS_INFO("Starting Obstacle Detector");
-  ros::spin();
-
   return 0;
 }

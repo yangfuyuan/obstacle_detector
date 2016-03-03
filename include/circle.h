@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef CIRCLE_H
-#define CIRCLE_H
+#pragma once
 
 #include <list>
 #include <cmath>
@@ -89,5 +88,3 @@ private:
 //}
 
 } // namespace obstacle_detector
-
-#endif // CIRCLE_H

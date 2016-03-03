@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef SCANS_MERGER_H
-#define SCANS_MERGER_H
+#pragma once
 
 #include <cmath>
 #include <ros/ros.h>
@@ -82,6 +81,4 @@ private:
   int p_max_unreceived_scans_;      // Maximum allowable unreceived scans to start publishing one scan
 };
 
-}
-
-#endif // SCANS_MERGER_H
+} // namespace obstacle_detector

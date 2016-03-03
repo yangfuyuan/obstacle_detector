@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef SEGMENT_H
-#define SEGMENT_H
+#pragma once
 
 #include <list>
 #include <cmath>
@@ -84,5 +83,3 @@ private:
 };
 
 } // namespace obstacle_detector
-
-#endif // SEGMENT_H

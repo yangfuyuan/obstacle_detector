@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef POINT_H
-#define POINT_H
+#pragma once
 
 #include <cmath>
 #include <cassert>
@@ -106,5 +105,3 @@ public:
 };
 
 } // namespace obstacle_detector
-
-#endif // POINT_H
