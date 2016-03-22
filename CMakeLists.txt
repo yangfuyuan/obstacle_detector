@@ -31,7 +31,7 @@ add_executable(scans_merger src/scans_merger.cpp include/scans_merger.h)
 target_link_libraries(scans_merger ${catkin_LIBRARIES})
 add_dependencies(scans_merger ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-#add_executable(obstacle_tracker src/obstacle_tracker.cpp include/obstacle_tracker.h)
-#target_link_libraries(obstacle_tracker ${catkin_LIBRARIES})
-#add_dependencies(obstacle_tracker ${PROJECT_NAME}_gencpp)
+add_executable(obstacle_tracker src/obstacle_tracker.cpp include/obstacle_tracker.h)
+target_link_libraries(obstacle_tracker ${catkin_LIBRARIES})
+add_dependencies(obstacle_tracker ${PROJECT_NAME}_gencpp)
 
