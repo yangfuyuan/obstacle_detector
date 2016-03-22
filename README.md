@@ -1,4 +1,4 @@
-# This is a Robrex Obstacle Detection package #
+# The obstacle_detector package #
 
 The package contains a single node called segments_detector which subscribes to sensor_msgs/LaserScan messages under topic /scan and publishes visualization markers with detected segments.
 
