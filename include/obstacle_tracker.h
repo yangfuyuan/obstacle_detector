@@ -35,7 +35,30 @@
 
 #pragma once
 
+#include <ros/ros.h>
+#include <list>
+
+#include "../include/circle.h"
+
 namespace obstacle_detector
 {
+
+class ObstacleTracker {
+public:
+  ObstacleTracker();
+
+private:
+  void obstaclesCallback();
+  void findCorrespondence();
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
+
+  ros::Subscriber obstacles_sub_;
+  ros::Publisher obstacles_pub_;
+
+  std::list<Circle> tracked_obstacles_;
+  std::list<Circle> untracked_obstacles_;
+};
 
 } // namespace obstacle_detector
