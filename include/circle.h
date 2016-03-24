@@ -48,8 +48,8 @@ namespace obstacle_detector
 class Circle
 {
 public:
-  Circle(const Point& p, const double r) : center_(p), radius_(r) {
-    assert(radius_ >= 0.0);
+  Circle(const Point& p = Point(), const double r = 0.0) : center_(p), radius_(r) {
+    //assert(radius_ >= 0.0);
   }
 
   /*

@@ -237,8 +237,10 @@ void ObstacleDetector::detectSegments(list<Point>& point_set) {
     if (!p_use_split_and_merge_)
       segment = fitSegment(point_set);
 
-    segments_.push_back(segment);
-    segments_.back().point_set().assign(point_set.begin(), point_set.end());
+    if (segment.length() > 0.0) {
+      segments_.push_back(segment);
+      segments_.back().point_set().assign(point_set.begin(), point_set.end());
+    }
   }
 }
 

@@ -80,7 +80,7 @@ public:
   friend Point operator- (const Point& p1, const Point& p2) { return Point(p1.x - p2.x, p1.y - p2.y); }
   friend Point operator* (const double f, const Point& p)  { return Point(f * p.x, f * p.y); }
   friend Point operator* (const Point& p, const double f)  { return Point(f * p.x, f * p.y); }
-  friend Point operator/ (const Point& p, const double f)  { assert(f != 0.0f); return Point(p.x / f, p.y / f); }
+  friend Point operator/ (const Point& p, const double f)  { return (f != 0.0) ? Point(p.x / f, p.y / f) : Point(); }
 
   Point operator- () { return Point(-x, -y); }
   Point operator+ () { return Point( x,  y); }

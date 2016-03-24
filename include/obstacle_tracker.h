@@ -35,9 +35,15 @@
 
 #pragma once
 
+#define ARMA_DONT_USE_CXX11
+
+#include <armadillo>
 #include <list>
+#include <vector>
 
 #include <ros/ros.h>
+#include <obstacle_detector/CircleObstacle.h>
+#include <obstacle_detector/SegmentObstacle.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/circle.h"
@@ -45,13 +51,17 @@
 namespace obstacle_detector
 {
 
+double CircleDistance(const CircleObstacle& c1, const CircleObstacle& c2) {
+  return sqrt(pow(c1.center.x - c2.center.x, 2.0) + pow(c1.center.y - c2.center.y, 2.0));
+}
+
 class ObstacleTracker {
 public:
   ObstacleTracker();
 
 private:
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-  void findCorrespondence();
+  void findCorrespondences(const arma::mat& distances, arma::imat& correspondences);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -59,8 +69,8 @@ private:
   ros::Subscriber obstacles_sub_;
   ros::Publisher obstacles_pub_;
 
-  std::list<Circle> tracked_obstacles_;
-  std::list<Circle> untracked_obstacles_;
+  std::vector<CircleObstacle> tracked_obstacles_;
+  std::vector<CircleObstacle> untracked_obstacles_;
 };
 
 } // namespace obstacle_detector
