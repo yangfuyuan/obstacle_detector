@@ -356,7 +356,7 @@ void ObstacleDetector::transformToWorld() {
   try {
     tf_listener_.waitForTransform(p_world_frame_, p_scanner_frame_, ros::Time::now(), ros::Duration(3.0));
 
-    for (auto it = circles_.begin(); it != circles_.end(); ++it) { // (Circle& circle : circles_) {
+    for (auto it = circles_.begin(); it != circles_.end(); ++it) {
       if (it->center().x < p_max_x_range_ && it->center().x > p_min_x_range_ &&
           it->center().y < p_max_y_range_ && it->center().y > p_min_y_range_)
       {
@@ -390,34 +390,36 @@ void ObstacleDetector::transformToWorld() {
 }
 
 void ObstacleDetector::publishObstacles() {
-  Obstacles obst_msg;
-  obst_msg.header.stamp = ros::Time::now();
+  Obstacles obstacles;
+  obstacles.header.stamp = ros::Time::now();
 
   if (p_transform_to_world)
-    obst_msg.header.frame_id = p_world_frame_;
+    obstacles.header.frame_id = p_world_frame_;
   else
-    obst_msg.header.frame_id = p_scanner_frame_;
+    obstacles.header.frame_id = p_scanner_frame_;
 
   for (const Segment& s : segments_) {
-    geometry_msgs::Point p;
-    p.x = s.first_point().x;
-    p.y = s.first_point().y;
-    obst_msg.first_points.push_back(p);
+    obstacle_detector::SegmentObstacle segment;
 
-    p.x = s.last_point().x;
-    p.y = s.last_point().y;
-    obst_msg.last_points.push_back(p);
+    segment.first_point.x = s.first_point().x;
+    segment.first_point.y = s.first_point().y;
+    segment.last_point.x = s.last_point().x;
+    segment.last_point.y = s.last_point().y;
+
+    obstacles.segments.push_back(segment);
   }
 
   for (const Circle& c : circles_) {
-    geometry_msgs::Point p;
-    p.x = c.center().x;
-    p.y = c.center().y;
-    obst_msg.centre_points.push_back(p);
-    obst_msg.radii.push_back(c.radius());
+    obstacle_detector::CircleObstacle circle;
+
+    circle.center.x = c.center().x;
+    circle.center.y = c.center().y;
+    circle.radius = c.radius();
+
+    obstacles.circles.push_back(circle);
   }
 
-  obstacles_pub_.publish(obst_msg);
+  obstacles_pub_.publish(obstacles);
 }
 
 void ObstacleDetector::publishMarkers() {

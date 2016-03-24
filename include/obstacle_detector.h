@@ -48,6 +48,8 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_listener.h>
+#include <obstacle_detector/CircleObstacle.h>
+#include <obstacle_detector/SegmentObstacle.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/point.h"

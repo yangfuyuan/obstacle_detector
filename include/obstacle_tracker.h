@@ -35,8 +35,10 @@
 
 #pragma once
 
-#include <ros/ros.h>
 #include <list>
+
+#include <ros/ros.h>
+#include <obstacle_detector/Obstacles.h>
 
 #include "../include/circle.h"
 
@@ -48,7 +50,7 @@ public:
   ObstacleTracker();
 
 private:
-  void obstaclesCallback();
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
   void findCorrespondence();
 
   ros::NodeHandle nh_;
