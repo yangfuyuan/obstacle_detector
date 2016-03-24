@@ -71,7 +71,7 @@ public:
   std::list<Point>& point_set() { return point_set_; }
 
   friend std::ostream& operator<<(std::ostream& out, const Circle& c)
-  { out << c.center_ << " " << c.radius_; return out; }
+  { out << "C: " << c.center_ << ", R: " << c.radius_; return out; }
 
 private:
   Point center_;

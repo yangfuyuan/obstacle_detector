@@ -169,7 +169,7 @@ void ObstacleDetector::processPoints() {
   groupPointsAndDetectSegments();
   mergeSegments();
   detectCircles();
-//  mergeCircles();
+  mergeCircles();
 
   if (p_transform_to_world)
     transformToWorld();
@@ -243,15 +243,7 @@ void ObstacleDetector::detectSegments(list<Point>& point_set) {
 }
 
 void ObstacleDetector::mergeSegments() {
-  bool merged = false;
-
-  // TODO: Check this
-  for (auto i = segments_.begin(); i != --segments_.end(); ++i) {
-    if (merged) {
-      --i;   // Check the new segment again
-      merged = false;
-    }
-
+  for (auto i = segments_.begin(); i != segments_.end(); ++i) {
     auto j = i;
     for (++j; j != segments_.end(); ++j) {
       if (compareAndMergeSegments(*i, *j)) {  // If merged - a new segment appeared at the end of the list
@@ -260,7 +252,8 @@ void ObstacleDetector::mergeSegments() {
         segments_.pop_back();       // Remove the new segment from the back of the list
         segments_.erase(temp_ptr);  // Remove the first merged segment
         segments_.erase(j);         // Remove the second merged segment
-        merged = true;
+        if (i != segments_.begin())
+          i--;                      // The for loop will increment i so let it point to new segment in next iteration
         break;
       }
     }
@@ -306,23 +299,17 @@ void ObstacleDetector::detectCircles() {
 }
 
 void ObstacleDetector::mergeCircles() {
-  bool merged = false;
-
   for (auto i = circles_.begin(); i != circles_.end(); ++i) {
-    if (merged) {
-      --i;   // Check the new circle too
-      merged = false;
-    }
-
     auto j = i;
     for (++j; j != circles_.end(); ++j) {
-      if (compareAndMergeCircles(*i, *j)) {  // If merged - a new circle appeared at the end of the list
+      if (compareAndMergeCircles(*i, *j)) {      // If merged - a new circle appeared at the end of the list
         auto temp_ptr = i;
-        i = circles_.insert(i, circles_.back()); // i now points to new segment
+        i = circles_.insert(i, circles_.back()); // i now points to new circle
         circles_.pop_back();
         circles_.erase(temp_ptr);
         circles_.erase(j);
-        merged = true;
+        if (i != circles_.begin())
+          --i;
         break;
       }
     }
@@ -330,7 +317,20 @@ void ObstacleDetector::mergeCircles() {
 }
 
 bool ObstacleDetector::compareAndMergeCircles(Circle& c1, Circle& c2) {
-  if (pow(c1.radius() + c2.radius(), 2) < (c2.center() - c1.center()).lengthSquared()) {
+  // If circle c1 is fully inside c2 - merge and leave as c2
+  if (c1.radius() + (c2.center() - c1.center()).length() <= c2.radius()) {
+    circles_.push_back(c2);
+    return true;
+  }
+
+  // If circle c2 is fully inside c1 - merge and leave as c1
+  if (c2.radius() + (c2.center() - c1.center()).length() <= c1.radius()) {
+    circles_.push_back(c1);
+    return true;
+  }
+
+  // If circles intersect and are 'small' - merge
+  if (c1.radius() + c2.radius() >= (c2.center() - c1.center()).length()) {
     Segment s(c1.center(), c2.center());
     Circle c(s);
     c.setRadius(c.radius() + max(c1.radius(), c2.radius()));

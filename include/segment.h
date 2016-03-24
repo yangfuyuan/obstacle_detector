@@ -80,9 +80,6 @@ private:
   Point p1_;
   Point p2_;
   std::list<Point> point_set_;
-
-  bool complete_;   // Complete line segment
-  bool isolated_;   // Not part of bigger cluster
 };
 
 } // namespace obstacle_detector
