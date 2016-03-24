@@ -50,8 +50,9 @@ const double pi = 3.14159265;
 class Point
 {
 public:
-  Point(double x = 0.0f, double y = 0.0f) : x(x), y(y) {}
+  Point(double x = 0.0, double y = 0.0) : x(x), y(y) {}
   Point(const Point& p) : x(p.x), y(p.y) {}
+  static Point fromPoolarCoords(const double r, const double phi) { return Point(r * cos(phi), r * sin(phi)); }
 
   double length()        const { return sqrt(pow(x, 2.0) + pow(y, 2.0)); }
   double lengthSquared() const { return pow(x, 2.0) + pow(y, 2.0); }
@@ -62,7 +63,7 @@ public:
 
   Point& normalize() {
     double L = length();
-    if (L > 0.0f)
+    if (L > 0.0)
       x /= L, y /= L;
     return *this;
   }
@@ -74,7 +75,6 @@ public:
    */
   Point reflected(const Point& normal) const { return *this - 2.0f * normal * (normal.dot(*this)); }
   Point perpendicular() const { return Point(-y, x); }
-  static Point fromPoolarCoords(const double r, const double phi) { return Point(r * cos(phi), r * sin(phi)); }
 
   friend Point operator+ (const Point& p1, const Point& p2) { return Point(p1.x + p2.x, p1.y + p2.y); }
   friend Point operator- (const Point& p1, const Point& p2) { return Point(p1.x - p2.x, p1.y - p2.y); }
