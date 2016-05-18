@@ -1,0 +1,46 @@
+### Moduł detekcji i śledzenia przeszkód
+
+1. Scalanie skanów
+2. Detekcja przeszkód
+3. Śledzenie przeszkód
+
+1. Rozważmy dwa skanery laserowe pracujące w jednej płaszczyźnie. Aby nie uruchamiać dwóch osobnych procesów dla każdego ze skanów, proponujemy wcześniejsze scalenie ich w jeden. 
+
+Ponieważ skanery umieszczone są w różnych miejscach płaszczyzny roboczej, pojawia się problem wynikający z różnego obszaru widoczności dla każdego z nich. Należy zatem wybrać z obszarów pokrywających się te punkty, które są bliżej początku przyjętego układu współrzędnych.
+
+Dla uproszczenia i zoptymalizowania dalszych procedur zdecydowano się, że scalony skan będzie już przedstawiany w postaci chmury punktów (PCL). Ważne jest jednak to, aby punkty były podane w kolejności rosnącego kąta (zgodnie lub przeciwnie do ruchu wskazówek zegara).
+
+*TODO: Warto sprawdzić jak sprawdzi się bezpośrednie scalenie skanóœ jeden po drugim. I tak późniejsze scalanie odcinków analizuje każdy z każdym.
+
+*TODO: Sprawdzić czy dla zasilania Hokuyo z 2 portów USB uzyska się lepszą jakość pomiarów. Montaż powinien być na radiatorze.
+
+Scalone punkty są rzutowane do wybranego układu odniesienia na płaszczyźnie, tutaj: punkt środkowy pomiędzy skanerami.
+
+Wynikowy skan (PCL) przesyłany jest do dalszej obróbki.
+
+2. W zasadzie każdy wykryty przez skaner(y) punkt należy utożsamiać z przeszkodą. Aby uprościć zastosowanie detektowanych przeszkód w algorytmach planowania / sterowania, przyjęta została konwencja reprezentacji grup punktów jako odcinków i okręgów. 
+
+W pierwszej kolejności odnajdywane są tylko odcinki, a dopiero z nich powstają okręgi.
+
+2.1. Detekcja odcinków przebiega w trzech etapach:
+ - grupowania,
+ - dzielenia na odcinki,
+ - łączenia zbliżonych odcinków.
+
+Grupowanie wykorzystuje fakt, że punkty PCLa są uporządkowane. Sprawdza odległość między następującymi po sobie punktami i jeśli odległość ta jest niewielka, zalicza je do wspólnej grupy. Jeśli odległość jest zbyt duża, rozpoczyna się nowa grupa. 
+
+* TODO: Zamiast badać odległość, lepiej badać jej kwadrat (bez pierwiastka).
+
+Dzielenie na odcinki wykorzystuje algorytm iterative end point fit, który opiera prostą na punktach końcowych grupy (zamiast na średniej) i szuka najbardziej odległego punktu, który stanowi punkt przełamania grupy. Algorytm działa rekurencyjnie.
+
+W wyniku powstaje lista odcinków, które zawierają dwa skrajne punkty po uśrednieniu oraz zestaw punktów, które je tworzą. Uśrednienie polega na odnalezieniu parametrów prostej wyrażonej równaniem ogólnym Ax + By + C = 0 (z regresji liniowej) i zrzutowaniu na nią ostatnich punktów.
+
+Łączenie zbliżonych odcinków przeszukuje pary odcinków każdy z każdym w następujący sposób: z sumy zbiorów tworzących oba odcinki uśredniana jest nowa prosta. Jeśli końcowe punkty obu odcinków leżą dostatecznie blisko tej prostej oraz dostatecznie blisko siebie, wówczas powstaje nowy, scalony odcinek, a pierwotne dwa zostają usunięte.
+
+Łączenie redukuje liczbę odcinków oraz poprawia statystyczną jakość odcinków.
+
+Dodatkowo, po łączeniu odcinków, warto sprawdzić, czy odcinki są kompletne. Odcinek uznaje się za kompletny, jeśli występuje "przed" swoimi sąsiadami. Odcinkiem kompletnym może też być część podzielonej grupy. Są to jednak odcinki nieizolowane.
+
+* TODO: Dodać oznaczenie kompletny/izolowany w strukturze odcinków.
+
+
