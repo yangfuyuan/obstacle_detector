@@ -54,7 +54,7 @@ ScansMerger::ScansMerger() : nh_(""), nh_local_("~") {
 }
 
 void ScansMerger::updateParams() {
-  nh_local_.param<std::string>("frame_id", p_frame_id_, "base");
+  nh_local_.param<std::string>("pcl_frame", p_pcl_frame_, "base");
   nh_local_.param<int>("max_unreceived_scans", p_max_unreceived_scans_, 1);
   nh_local_.param<bool>("omit_overlapping_scans", p_omit_overlapping_scans_, true);
   nh_local_.param<double>("scanners_separation", p_scanners_separation_, 0.45);
@@ -113,7 +113,7 @@ void ScansMerger::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 }
 
 void ScansMerger::publishPCL() {
-  pcl_msg_.header.frame_id = p_frame_id_;
+  pcl_msg_.header.frame_id = p_pcl_frame_;
   pcl_msg_.header.stamp = ros::Time::now();
   pcl_pub_.publish(pcl_msg_);
   pcl_msg_.points.clear();

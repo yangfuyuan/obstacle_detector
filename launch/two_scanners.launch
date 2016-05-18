@@ -1,9 +1,4 @@
-<!-- 
-This launch file starts two hokuyo scanners and laser scan merger
-as well as laser scan matcher and obstacle detector. It also
-configures transformations and starts Rviz for data visualisation.
--->
-
+<!-- Runs obstacle_detector with two Hokuyo laser scanners. -->
 <launch>
   <node pkg="hokuyo_node" type="hokuyo_node" name="front_hokuyo" output="screen">
     <param name="port"     type="string" value="/dev/sensors/hokuyo_H0904847"/>
@@ -44,7 +39,7 @@ configures transformations and starts Rviz for data visualisation.
   <node pkg="tf" type="static_transform_publisher" name="base_world" output="screen" args="0 0 0 0 0 0 base world 100"/>
  
   <node pkg="obstacle_detector" type="scans_merger" name="scans_merger" output="screen">
-    <param name="frame_id" type="string" value="base"/>
+    <param name="pcl_frame" type="string" value="base"/>
     <param name="max_unreceived_scans" value="1"/>
     <param name="omit_overlapping_scans" type="bool" value="true"/>
     <param name="scanners_separation" value="0.365"/>
@@ -75,6 +70,8 @@ configures transformations and starts Rviz for data visualisation.
     <param name="max_y_range"          value="2.0"/>
     <param name="min_y_range"          value="-2.0"/>
   </node>
+  
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen"/>
   
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find obstacle_detector)/resources/obstacle_detector.rviz"/>
 </launch>

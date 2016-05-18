@@ -1,11 +1,6 @@
-<!-- 
-This launch file starts a single hokuyo laser scanner,
-prepares scan matching and runs the obstacle detector.
-It also opens Rviz for data visualisation. 
--->
+<!-- Runs obstacle_detector with single Hokuyo laser scanner. -->
 <launch>
-
-  <node pkg="hokuyo_node" type="hokuyo_node" name="front_hokuyo" output="screen">
+  <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node" output="screen">
     <param name="port" type="string" value="/dev/ttyACM0"/>
     <param name="frame_id" type="string" value="scanner"/>
 
@@ -61,7 +56,7 @@ It also opens Rviz for data visualisation.
     <param name="min_y_range"          value="-2.0"/>
   </node>
   
-  <node name="obstacle_visualizer" pkg="obstacle_detector" type="obstacle_visualizer" output="screen"/>
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen"/>
   
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find obstacle_detector)/resources/obstacle_detector.rviz"/>
 </launch>

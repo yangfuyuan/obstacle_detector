@@ -1,8 +1,4 @@
-<!-- 
-This launch file starts a static_scan_publisher,
-prepares static transform and runs the obstacle detector.
-It also opens Rviz for data visualisation. 
--->
+<!-- Runs obstacle_detector with a static_scan publisher. -->
 <launch>
   <node pkg="obstacle_detector" type="static_scan_publisher" name="static_scan_publisher" output="screen"/>
   
@@ -34,7 +30,7 @@ It also opens Rviz for data visualisation.
     <param name="min_y_range"          value="-1.0"/>
   </node>
   
-  <node name="obstacle_visualizer" pkg="obstacle_detector" type="obstacle_visualizer" output="screen"/>
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen"/>
   
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find obstacle_detector)/resources/obstacle_detector.rviz"/>
 </launch>
