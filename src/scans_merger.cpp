@@ -46,15 +46,15 @@ ScansMerger::ScansMerger() : nh_(""), nh_local_("~") {
 
   first_scan_received_ = false;
   second_scan_received_ = false;
-  unreceived_scans1_ = 0;
-  unreceived_scans2_ = 0;
+  unreceived_front_scans_ = 0;
+  unreceived_rear_scans_ = 0;
 
   ROS_INFO("Scans Merger [OK]");
   ros::spin();
 }
 
 void ScansMerger::updateParams() {
-  nh_local_.param<std::string>("frame_id", p_frame_id_, "base");
+  nh_local_.param<std::string>("pcl_frame", p_pcl_frame_, "base");
   nh_local_.param<int>("max_unreceived_scans", p_max_unreceived_scans_, 1);
   nh_local_.param<bool>("omit_overlapping_scans", p_omit_overlapping_scans_, true);
   nh_local_.param<double>("scanners_separation", p_scanners_separation_, 0.45);
@@ -78,12 +78,12 @@ void ScansMerger::frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan
 
   first_scan_received_ = true;
 
-  if (second_scan_received_ || unreceived_scans2_ > p_max_unreceived_scans_) {
+  if (second_scan_received_ || unreceived_rear_scans_ > p_max_unreceived_scans_) {
     publishPCL();
 
-    unreceived_scans1_ = 0;
+    unreceived_front_scans_ = 0;
   }
-  else unreceived_scans2_++;
+  else unreceived_rear_scans_++;
 }
 
 void ScansMerger::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -104,22 +104,22 @@ void ScansMerger::rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   second_scan_received_ = true;
 
-  if (first_scan_received_ || unreceived_scans1_ > p_max_unreceived_scans_) {
+  if (first_scan_received_ || unreceived_front_scans_ > p_max_unreceived_scans_) {
     publishPCL();
 
-    unreceived_scans2_ = 0;
+    unreceived_rear_scans_ = 0;
   }
-  else unreceived_scans1_++;
+  else unreceived_front_scans_++;
 }
 
 void ScansMerger::publishPCL() {
-  pcl_msg_.header.frame_id = p_frame_id_;
+  pcl_msg_.header.frame_id = p_pcl_frame_;
   pcl_msg_.header.stamp = ros::Time::now();
   pcl_pub_.publish(pcl_msg_);
   pcl_msg_.points.clear();
 
   // There is no need to omit overlapping scans from one scan
-  p_omit_overlapping_scans_ = (unreceived_scans1_ <= p_max_unreceived_scans_ && unreceived_scans2_ <= p_max_unreceived_scans_);
+  p_omit_overlapping_scans_ = (unreceived_front_scans_ <= p_max_unreceived_scans_ && unreceived_rear_scans_ <= p_max_unreceived_scans_);
 
   first_scan_received_ = false;
   second_scan_received_ = false;
