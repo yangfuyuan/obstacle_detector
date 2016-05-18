@@ -45,11 +45,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_listener.h>
-#include <obstacle_detector/CircleObstacle.h>
-#include <obstacle_detector/SegmentObstacle.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/point.h"
@@ -81,8 +77,6 @@ private:
   bool compareAndMergeCircles(Circle& c1, Circle& c2);
 
   void publishObstacles();
-  void publishMarkers();
-
   void transformToWorld();
   void saveSnapshot();
 
@@ -92,7 +86,6 @@ private:
 
   ros::Subscriber scan_sub_;
   ros::Subscriber pcl_sub_;
-  ros::Publisher  markers_pub_;
   ros::Publisher  obstacles_pub_;
   ros::Timer      params_tim_;
 
@@ -109,11 +102,9 @@ private:
   std::string p_scan_topic_;      // Name of the topic of scans subscription
   std::string p_pcl_topic_;       // Name of the topic of scans subscription
   std::string p_obstacles_topic_; // Name of the topic of obstacles publishing
-  std::string p_markers_topic_;   // Name of the topic of markers publishing
 
   bool p_use_scan_;               // Use data from scans
   bool p_use_pcl_;                // Use data from point clouds
-  bool p_publish_markers_;        // If true, visualisation_markers will be published
   bool p_use_split_and_merge_;    // If false, iterative closest point is used instead of split and merge
   bool p_transform_to_world;      // Transform obstacles to world coordinate frame
 

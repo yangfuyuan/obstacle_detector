@@ -57,9 +57,6 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
     if (!nh_local_.getParam("obstacles_topic", p_obstacles_topic_))
       p_obstacles_topic_ = "obstacles";
 
-    if (!nh_local_.getParam("markers_topic", p_markers_topic_))
-      p_markers_topic_ = "obstacle_markers";
-
     if (!nh_local_.getParam("use_scan", p_use_scan_))
       p_use_scan_ = true;
 
@@ -68,9 +65,6 @@ void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
 
     if (!nh_local_.getParam("transform_to_world", p_transform_to_world))
       p_transform_to_world = true;
-
-    if (!nh_local_.getParam("publish_markers", p_publish_markers_))
-      p_publish_markers_ = true;
 
     first_call = false;
   }
@@ -126,9 +120,6 @@ ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
   else if (p_use_pcl_)
     pcl_sub_  = nh_.subscribe<sensor_msgs::PointCloud>(p_pcl_topic_, 5, &ObstacleDetector::pclCallback, this);
 
-  if (p_publish_markers_)
-    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(p_markers_topic_, 5);
-
   obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacles_topic_, 5);
 
   params_tim_ = nh_.createTimer(ros::Duration(1.0), &ObstacleDetector::updateParams, this);
@@ -173,9 +164,6 @@ void ObstacleDetector::processPoints() {
 
   if (p_transform_to_world)
     transformToWorld();
-
-  if (p_publish_markers_)
-    publishMarkers();
 
   publishObstacles();
 }
@@ -422,92 +410,6 @@ void ObstacleDetector::publishObstacles() {
   }
 
   obstacles_pub_.publish(obstacles);
-}
-
-void ObstacleDetector::publishMarkers() {
-  visualization_msgs::MarkerArray marker_array;
-
-  visualization_msgs::Marker circle_marker;
-  circle_marker.header.stamp = ros::Time::now();
-
-  if (p_transform_to_world)
-    circle_marker.header.frame_id = p_world_frame_;
-  else
-    circle_marker.header.frame_id = p_scanner_frame_;
-
-  circle_marker.ns = "circles";
-  circle_marker.id = 0;
-  circle_marker.type = visualization_msgs::Marker::CYLINDER;
-  circle_marker.action = visualization_msgs::Marker::ADD;
-  circle_marker.pose.position.x = 0.0;
-  circle_marker.pose.position.y = 0.0;
-  circle_marker.pose.position.z = -0.1;
-  circle_marker.pose.orientation.x = 0.0;
-  circle_marker.pose.orientation.y = 0.0;
-  circle_marker.pose.orientation.z = 0.0;
-  circle_marker.pose.orientation.w = 1.0;
-  circle_marker.scale.x = 0.01;
-  circle_marker.scale.y = 0.01;
-  circle_marker.scale.z = 0.1;
-  circle_marker.color.r = 1.0;
-  circle_marker.color.g = 0.0;
-  circle_marker.color.b = 1.0;
-  circle_marker.color.a = 0.2;
-  circle_marker.lifetime = ros::Duration(0.1);
-
-  int i = 0;
-  for (const Circle& circle : circles_) {
-    circle_marker.pose.position.x = circle.center().x;
-    circle_marker.pose.position.y = circle.center().y;
-    circle_marker.scale.x = 2.0 * circle.radius();
-    circle_marker.scale.y = 2.0 * circle.radius();
-    circle_marker.id = i++;
-
-    marker_array.markers.push_back(circle_marker);
-  }
-
-  visualization_msgs::Marker segments_marker;
-  segments_marker.header.stamp = ros::Time::now();
-
-  if (p_transform_to_world)
-    segments_marker.header.frame_id = p_world_frame_;
-  else
-    segments_marker.header.frame_id = p_scanner_frame_;
-
-  segments_marker.ns = "segments";
-  segments_marker.id = 0;
-  segments_marker.type = visualization_msgs::Marker::LINE_LIST;
-  segments_marker.action = visualization_msgs::Marker::ADD;
-  segments_marker.pose.position.x = 0.0;
-  segments_marker.pose.position.y = 0.0;
-  segments_marker.pose.position.z = 0.1;
-  segments_marker.pose.orientation.x = 0.0;
-  segments_marker.pose.orientation.y = 0.0;
-  segments_marker.pose.orientation.z = 0.0;
-  segments_marker.pose.orientation.w = 1.0;
-  segments_marker.scale.x = 0.01;
-  segments_marker.scale.y = 0.01;
-  segments_marker.scale.z = 0.01;
-  segments_marker.color.r = 1.0;
-  segments_marker.color.g = 0.0;
-  segments_marker.color.b = 0.0;
-  segments_marker.color.a = 1.0;
-  segments_marker.lifetime = ros::Duration(0.1);
-
-  for (const Segment& segment : segments_) {
-    geometry_msgs::Point pt;
-    pt.x = segment.first_point().x;
-    pt.y = segment.first_point().y;
-    segments_marker.points.push_back(pt);
-
-    pt.x = segment.last_point().x;
-    pt.y = segment.last_point().y;
-    segments_marker.points.push_back(pt);
-  }
-
-  marker_array.markers.push_back(segments_marker);
-
-  markers_pub_.publish(marker_array);
 }
 
 int main(int argc, char** argv) {
