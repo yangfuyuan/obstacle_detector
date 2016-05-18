@@ -38,8 +38,8 @@
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "static_scan_publisher");
-  ros::NodeHandle n;
-  ros::Publisher scan_pub = n.advertise<sensor_msgs::LaserScan>("scan", 10);
+  ros::NodeHandle nh;
+  ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 10);
 
   sensor_msgs::LaserScan scan;
 
@@ -74,7 +74,6 @@ int main(int argc, char** argv) {
     scan.header.stamp = ros::Time().now();
     scan_pub.publish(scan);
 
-    ros::spinOnce();
     loop_rate.sleep();
   }
   
