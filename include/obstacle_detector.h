@@ -35,17 +35,10 @@
 
 #pragma once
 
-#include <list>
-#include <vector>
-#include <string>
-#include <fstream>
-
 #include <ros/ros.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/PointStamped.h>
+#include <tf/transform_listener.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <tf/transform_listener.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/point.h"
@@ -64,7 +57,7 @@ public:
 private:
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl);
-  void updateParams(const ros::TimerEvent& event);
+  void updateParams();
 
   void processPoints();
   void groupPointsAndDetectSegments();
@@ -78,7 +71,6 @@ private:
 
   void publishObstacles();
   void transformToWorld();
-  void saveSnapshot();
 
   // ROS handlers
   ros::NodeHandle nh_;
@@ -87,7 +79,6 @@ private:
   ros::Subscriber scan_sub_;
   ros::Subscriber pcl_sub_;
   ros::Publisher  obstacles_pub_;
-  ros::Timer      params_tim_;
 
   tf::TransformListener tf_listener_;
 
@@ -99,9 +90,6 @@ private:
   // Parameters
   std::string p_world_frame_;     // Name of the world coordinate frame
   std::string p_scanner_frame_;   // Name of the scanner coordinate frame
-  std::string p_scan_topic_;      // Name of the topic of scans subscription
-  std::string p_pcl_topic_;       // Name of the topic of scans subscription
-  std::string p_obstacles_topic_; // Name of the topic of obstacles publishing
 
   bool p_use_scan_;               // Use data from scans
   bool p_use_pcl_;                // Use data from point clouds

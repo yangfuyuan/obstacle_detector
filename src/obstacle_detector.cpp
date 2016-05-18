@@ -38,94 +38,44 @@
 using namespace std;
 using namespace obstacle_detector;
 
-void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
-  static bool first_call = true;
-
-  if (first_call) {
-    if (!nh_local_.getParam("world_frame", p_world_frame_))
-      p_world_frame_ = "world";
-
-    if (!nh_local_.getParam("scanner_frame", p_scanner_frame_))
-      p_scanner_frame_ = "scanner";
-
-    if (!nh_local_.getParam("scan_topic", p_scan_topic_))
-      p_scan_topic_ = "scan";
-
-    if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
-      p_pcl_topic_ = "pcl";
-
-    if (!nh_local_.getParam("obstacles_topic", p_obstacles_topic_))
-      p_obstacles_topic_ = "obstacles";
-
-    if (!nh_local_.getParam("use_scan", p_use_scan_))
-      p_use_scan_ = true;
-
-    if (!nh_local_.getParam("use_pcl", p_use_pcl_))
-      p_use_pcl_ = false;
-
-    if (!nh_local_.getParam("transform_to_world", p_transform_to_world))
-      p_transform_to_world = true;
-
-    first_call = false;
-  }
-
-  if (!nh_local_.getParam("use_split_and_merge", p_use_split_and_merge_))
-    p_use_split_and_merge_ = false;
-
-  if (!nh_local_.getParam("min_group_points", p_min_group_points_))
-    p_min_group_points_ = 3;
-
-  if (!nh_local_.getParam("max_group_distance", p_max_group_distance_))
-    p_max_group_distance_ = 0.100;
-
-  if (!nh_local_.getParam("distance_proportion", p_distance_proportion_))
-    p_distance_proportion_ = 0.006136;
-
-  if (!nh_local_.getParam("max_split_distance", p_max_split_distance_))
-    p_max_split_distance_ = 0.100;
-
-  if (!nh_local_.getParam("max_merge_separation", p_max_merge_separation_))
-    p_max_merge_separation_ = 0.200;
-
-  if (!nh_local_.getParam("max_merge_spread", p_max_merge_spread_))
-    p_max_merge_spread_ = 0.070;
-
-  if (!nh_local_.getParam("max_circle_radius", p_max_circle_radius_))
-    p_max_circle_radius_ = 0.300;
-
-  if (!nh_local_.getParam("radius_enlargement", p_radius_enlargement_))
-    p_radius_enlargement_ = 0.050;
-
-  if (!nh_local_.getParam("max_scanner_range", p_max_scanner_range_))
-    p_max_scanner_range_ = 5.0;
-
-  if (!nh_local_.getParam("max_x_range", p_max_x_range_))
-    p_max_x_range_ = 2.0;
-
-  if (!nh_local_.getParam("min_x_range", p_min_x_range_))
-    p_min_x_range_ = -2.0;
-
-  if (!nh_local_.getParam("max_y_range", p_max_y_range_))
-    p_max_y_range_ = 1.0;
-
-  if (!nh_local_.getParam("min_y_range", p_min_y_range_))
-    p_min_y_range_ = -1.0;
-}
-
-ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
-  updateParams(ros::TimerEvent());
+ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~") {
+  updateParams();
 
   if (p_use_scan_)
-    scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_scan_topic_, 5, &ObstacleDetector::scanCallback, this);
+    scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
   else if (p_use_pcl_)
-    pcl_sub_  = nh_.subscribe<sensor_msgs::PointCloud>(p_pcl_topic_, 5, &ObstacleDetector::pclCallback, this);
+    pcl_sub_ = nh_.subscribe("pcl", 10, &ObstacleDetector::pclCallback, this);
 
-  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacles_topic_, 5);
-
-  params_tim_ = nh_.createTimer(ros::Duration(1.0), &ObstacleDetector::updateParams, this);
+  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>("obstacles", 5);
 
   ROS_INFO("Obstacle Detector [OK]");
   ros::spin();
+}
+
+void ObstacleDetector::updateParams() {
+  nh_local_.param<std::string>("world_frame", p_world_frame_, "world");
+  nh_local_.param<std::string>("scanner_frame", p_scanner_frame_, "scanner");
+
+  nh_local_.param<bool>("use_scan", p_use_scan_, true);
+  nh_local_.param<bool>("use_pcl", p_use_pcl_, false);
+  nh_local_.param<bool>("transform_to_world", p_transform_to_world, true);
+  nh_local_.param<bool>("use_split_and_merge", p_use_split_and_merge_, false);
+
+  nh_local_.param<int>("min_group_points", p_min_group_points_, 3);
+
+  nh_local_.param<double>("max_group_distance", p_max_group_distance_, 0.100);
+  nh_local_.param<double>("distance_proportion", p_distance_proportion_, 0.006136);
+  nh_local_.param<double>("max_split_distance", p_max_split_distance_, 0.100);
+  nh_local_.param<double>("max_merge_separation", p_max_merge_separation_, 0.200);
+  nh_local_.param<double>("max_merge_spread", p_max_merge_spread_, 0.070);
+  nh_local_.param<double>("max_circle_radius", p_max_circle_radius_, 0.300);
+  nh_local_.param<double>("radius_enlargement", p_radius_enlargement_, 0.050);
+
+  nh_local_.param<double>("max_scanner_range", p_max_scanner_range_, 5.0);
+  nh_local_.param<double>("max_x_range", p_max_x_range_, 2.0);
+  nh_local_.param<double>("min_x_range", p_min_x_range_, -2.0);
+  nh_local_.param<double>("max_y_range", p_max_y_range_, 2.0);
+  nh_local_.param<double>("min_y_range", p_min_y_range_, -2.0);
 }
 
 void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -159,6 +109,7 @@ void ObstacleDetector::processPoints() {
 
   groupPointsAndDetectSegments();
   mergeSegments();
+
   detectCircles();
   mergeCircles();
 

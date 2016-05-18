@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
 
   sensor_msgs::LaserScan scan;
 
-  scan.header.stamp = ros::Time().now();
   scan.header.frame_id = "scanner";
   scan.angle_increment = 0.00613592332229;
   scan.time_increment = 0.0000976562514552;
@@ -71,6 +70,7 @@ int main(int argc, char** argv) {
   ros::Rate loop_rate(10);
   while (ros::ok()) {
 
+    scan.header.stamp = ros::Time().now();
     scan_pub.publish(scan);
 
     ros::spinOnce();

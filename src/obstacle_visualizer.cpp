@@ -41,6 +41,7 @@ ObstacleVisualizer::ObstacleVisualizer() : nh_("") {
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>("obstacles", 10, &ObstacleVisualizer::obstaclesCallback, this);
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("obstacles_markers", 10);
 
+  ROS_INFO("Obstacle Visualizer [OK]");
   ros::spin();
 }
 
@@ -62,9 +63,9 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   circle_marker.pose.orientation.w = 1.0;
   circle_marker.scale.z = 0.1;
   circle_marker.color.r = 1.0;
-  circle_marker.color.g = 0.0;
-  circle_marker.color.b = 1.0;
-  circle_marker.color.a = 0.2;
+  circle_marker.color.g = 1.0;
+  circle_marker.color.b = 0.0;
+  circle_marker.color.a = 0.5;
   circle_marker.lifetime = ros::Duration(0.1);
 
   for (auto circle : obstacles->circles) {
@@ -98,7 +99,7 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   segments_marker.color.r = 1.0;
   segments_marker.color.g = 0.0;
   segments_marker.color.b = 0.0;
-  segments_marker.color.a = 1.0;
+  segments_marker.color.a = 0.5;
   segments_marker.lifetime = ros::Duration(0.1);
 
   for (auto segment : obstacles->segments) {
