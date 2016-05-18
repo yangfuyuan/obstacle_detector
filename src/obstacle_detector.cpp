@@ -38,103 +38,44 @@
 using namespace std;
 using namespace obstacle_detector;
 
-void ObstacleDetector::updateParams(const ros::TimerEvent& event) {
-  static bool first_call = true;
-
-  if (first_call) {
-    if (!nh_local_.getParam("world_frame", p_world_frame_))
-      p_world_frame_ = "world";
-
-    if (!nh_local_.getParam("scanner_frame", p_scanner_frame_))
-      p_scanner_frame_ = "scanner";
-
-    if (!nh_local_.getParam("scan_topic", p_scan_topic_))
-      p_scan_topic_ = "scan";
-
-    if (!nh_local_.getParam("pcl_topic", p_pcl_topic_))
-      p_pcl_topic_ = "pcl";
-
-    if (!nh_local_.getParam("obstacles_topic", p_obstacles_topic_))
-      p_obstacles_topic_ = "obstacles";
-
-    if (!nh_local_.getParam("markers_topic", p_markers_topic_))
-      p_markers_topic_ = "obstacle_markers";
-
-    if (!nh_local_.getParam("use_scan", p_use_scan_))
-      p_use_scan_ = true;
-
-    if (!nh_local_.getParam("use_pcl", p_use_pcl_))
-      p_use_pcl_ = false;
-
-    if (!nh_local_.getParam("transform_to_world", p_transform_to_world))
-      p_transform_to_world = true;
-
-    if (!nh_local_.getParam("publish_markers", p_publish_markers_))
-      p_publish_markers_ = true;
-
-    first_call = false;
-  }
-
-  if (!nh_local_.getParam("use_split_and_merge", p_use_split_and_merge_))
-    p_use_split_and_merge_ = false;
-
-  if (!nh_local_.getParam("min_group_points", p_min_group_points_))
-    p_min_group_points_ = 3;
-
-  if (!nh_local_.getParam("max_group_distance", p_max_group_distance_))
-    p_max_group_distance_ = 0.100;
-
-  if (!nh_local_.getParam("distance_proportion", p_distance_proportion_))
-    p_distance_proportion_ = 0.006136;
-
-  if (!nh_local_.getParam("max_split_distance", p_max_split_distance_))
-    p_max_split_distance_ = 0.100;
-
-  if (!nh_local_.getParam("max_merge_separation", p_max_merge_separation_))
-    p_max_merge_separation_ = 0.200;
-
-  if (!nh_local_.getParam("max_merge_spread", p_max_merge_spread_))
-    p_max_merge_spread_ = 0.070;
-
-  if (!nh_local_.getParam("max_circle_radius", p_max_circle_radius_))
-    p_max_circle_radius_ = 0.300;
-
-  if (!nh_local_.getParam("radius_enlargement", p_radius_enlargement_))
-    p_radius_enlargement_ = 0.050;
-
-  if (!nh_local_.getParam("max_scanner_range", p_max_scanner_range_))
-    p_max_scanner_range_ = 5.0;
-
-  if (!nh_local_.getParam("max_x_range", p_max_x_range_))
-    p_max_x_range_ = 2.0;
-
-  if (!nh_local_.getParam("min_x_range", p_min_x_range_))
-    p_min_x_range_ = -2.0;
-
-  if (!nh_local_.getParam("max_y_range", p_max_y_range_))
-    p_max_y_range_ = 1.0;
-
-  if (!nh_local_.getParam("min_y_range", p_min_y_range_))
-    p_min_y_range_ = -1.0;
-}
-
-ObstacleDetector::ObstacleDetector() : nh_(), nh_local_("~") {
-  updateParams(ros::TimerEvent());
+ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~") {
+  updateParams();
 
   if (p_use_scan_)
-    scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(p_scan_topic_, 5, &ObstacleDetector::scanCallback, this);
+    scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
   else if (p_use_pcl_)
-    pcl_sub_  = nh_.subscribe<sensor_msgs::PointCloud>(p_pcl_topic_, 5, &ObstacleDetector::pclCallback, this);
+    pcl_sub_ = nh_.subscribe("pcl", 10, &ObstacleDetector::pclCallback, this);
 
-  if (p_publish_markers_)
-    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>(p_markers_topic_, 5);
-
-  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>(p_obstacles_topic_, 5);
-
-  params_tim_ = nh_.createTimer(ros::Duration(1.0), &ObstacleDetector::updateParams, this);
+  obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>("obstacles", 5);
 
   ROS_INFO("Obstacle Detector [OK]");
   ros::spin();
+}
+
+void ObstacleDetector::updateParams() {
+  nh_local_.param<std::string>("world_frame", p_world_frame_, "world");
+  nh_local_.param<std::string>("scanner_frame", p_scanner_frame_, "scanner");
+
+  nh_local_.param<bool>("use_scan", p_use_scan_, true);
+  nh_local_.param<bool>("use_pcl", p_use_pcl_, false);
+  nh_local_.param<bool>("transform_to_world", p_transform_to_world, true);
+  nh_local_.param<bool>("use_split_and_merge", p_use_split_and_merge_, false);
+
+  nh_local_.param<int>("min_group_points", p_min_group_points_, 3);
+
+  nh_local_.param<double>("max_group_distance", p_max_group_distance_, 0.100);
+  nh_local_.param<double>("distance_proportion", p_distance_proportion_, 0.006136);
+  nh_local_.param<double>("max_split_distance", p_max_split_distance_, 0.100);
+  nh_local_.param<double>("max_merge_separation", p_max_merge_separation_, 0.200);
+  nh_local_.param<double>("max_merge_spread", p_max_merge_spread_, 0.070);
+  nh_local_.param<double>("max_circle_radius", p_max_circle_radius_, 0.300);
+  nh_local_.param<double>("radius_enlargement", p_radius_enlargement_, 0.050);
+
+  nh_local_.param<double>("max_scanner_range", p_max_scanner_range_, 5.0);
+  nh_local_.param<double>("max_x_range", p_max_x_range_, 2.0);
+  nh_local_.param<double>("min_x_range", p_min_x_range_, -2.0);
+  nh_local_.param<double>("max_y_range", p_max_y_range_, 2.0);
+  nh_local_.param<double>("min_y_range", p_min_y_range_, -2.0);
 }
 
 void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -168,14 +109,12 @@ void ObstacleDetector::processPoints() {
 
   groupPointsAndDetectSegments();
   mergeSegments();
+
   detectCircles();
-//  mergeCircles();
+  mergeCircles();
 
   if (p_transform_to_world)
     transformToWorld();
-
-  if (p_publish_markers_)
-    publishMarkers();
 
   publishObstacles();
 }
@@ -237,21 +176,15 @@ void ObstacleDetector::detectSegments(list<Point>& point_set) {
     if (!p_use_split_and_merge_)
       segment = fitSegment(point_set);
 
-    segments_.push_back(segment);
-    segments_.back().point_set().assign(point_set.begin(), point_set.end());
+    if (segment.length() > 0.0) {
+      segments_.push_back(segment);
+      segments_.back().point_set().assign(point_set.begin(), point_set.end());
+    }
   }
 }
 
 void ObstacleDetector::mergeSegments() {
-  bool merged = false;
-
-  // TODO: Check this
-  for (auto i = segments_.begin(); i != --segments_.end(); ++i) {
-    if (merged) {
-      --i;   // Check the new segment again
-      merged = false;
-    }
-
+  for (auto i = segments_.begin(); i != segments_.end(); ++i) {
     auto j = i;
     for (++j; j != segments_.end(); ++j) {
       if (compareAndMergeSegments(*i, *j)) {  // If merged - a new segment appeared at the end of the list
@@ -260,7 +193,8 @@ void ObstacleDetector::mergeSegments() {
         segments_.pop_back();       // Remove the new segment from the back of the list
         segments_.erase(temp_ptr);  // Remove the first merged segment
         segments_.erase(j);         // Remove the second merged segment
-        merged = true;
+        if (i != segments_.begin())
+          i--;                      // The for loop will increment i so let it point to new segment in next iteration
         break;
       }
     }
@@ -306,23 +240,17 @@ void ObstacleDetector::detectCircles() {
 }
 
 void ObstacleDetector::mergeCircles() {
-  bool merged = false;
-
   for (auto i = circles_.begin(); i != circles_.end(); ++i) {
-    if (merged) {
-      --i;   // Check the new circle too
-      merged = false;
-    }
-
     auto j = i;
     for (++j; j != circles_.end(); ++j) {
-      if (compareAndMergeCircles(*i, *j)) {  // If merged - a new circle appeared at the end of the list
+      if (compareAndMergeCircles(*i, *j)) {      // If merged - a new circle appeared at the end of the list
         auto temp_ptr = i;
-        i = circles_.insert(i, circles_.back()); // i now points to new segment
+        i = circles_.insert(i, circles_.back()); // i now points to new circle
         circles_.pop_back();
         circles_.erase(temp_ptr);
         circles_.erase(j);
-        merged = true;
+        if (i != circles_.begin())
+          --i;
         break;
       }
     }
@@ -330,7 +258,20 @@ void ObstacleDetector::mergeCircles() {
 }
 
 bool ObstacleDetector::compareAndMergeCircles(Circle& c1, Circle& c2) {
-  if (pow(c1.radius() + c2.radius(), 2) < (c2.center() - c1.center()).lengthSquared()) {
+  // If circle c1 is fully inside c2 - merge and leave as c2
+  if (c1.radius() + (c2.center() - c1.center()).length() <= c2.radius()) {
+    circles_.push_back(c2);
+    return true;
+  }
+
+  // If circle c2 is fully inside c1 - merge and leave as c1
+  if (c2.radius() + (c2.center() - c1.center()).length() <= c1.radius()) {
+    circles_.push_back(c1);
+    return true;
+  }
+
+  // If circles intersect and are 'small' - merge
+  if (c1.radius() + c2.radius() >= (c2.center() - c1.center()).length()) {
     Segment s(c1.center(), c2.center());
     Circle c(s);
     c.setRadius(c.radius() + max(c1.radius(), c2.radius()));
@@ -356,7 +297,7 @@ void ObstacleDetector::transformToWorld() {
   try {
     tf_listener_.waitForTransform(p_world_frame_, p_scanner_frame_, ros::Time::now(), ros::Duration(3.0));
 
-    for (auto it = circles_.begin(); it != circles_.end(); ++it) { // (Circle& circle : circles_) {
+    for (auto it = circles_.begin(); it != circles_.end(); ++it) {
       if (it->center().x < p_max_x_range_ && it->center().x > p_min_x_range_ &&
           it->center().y < p_max_y_range_ && it->center().y > p_min_y_range_)
       {
@@ -390,120 +331,36 @@ void ObstacleDetector::transformToWorld() {
 }
 
 void ObstacleDetector::publishObstacles() {
-  Obstacles obst_msg;
-  obst_msg.header.stamp = ros::Time::now();
+  Obstacles obstacles;
+  obstacles.header.stamp = ros::Time::now();
 
   if (p_transform_to_world)
-    obst_msg.header.frame_id = p_world_frame_;
+    obstacles.header.frame_id = p_world_frame_;
   else
-    obst_msg.header.frame_id = p_scanner_frame_;
+    obstacles.header.frame_id = p_scanner_frame_;
 
   for (const Segment& s : segments_) {
-    geometry_msgs::Point p;
-    p.x = s.first_point().x;
-    p.y = s.first_point().y;
-    obst_msg.first_points.push_back(p);
+    obstacle_detector::SegmentObstacle segment;
 
-    p.x = s.last_point().x;
-    p.y = s.last_point().y;
-    obst_msg.last_points.push_back(p);
+    segment.first_point.x = s.first_point().x;
+    segment.first_point.y = s.first_point().y;
+    segment.last_point.x = s.last_point().x;
+    segment.last_point.y = s.last_point().y;
+
+    obstacles.segments.push_back(segment);
   }
 
   for (const Circle& c : circles_) {
-    geometry_msgs::Point p;
-    p.x = c.center().x;
-    p.y = c.center().y;
-    obst_msg.centre_points.push_back(p);
-    obst_msg.radii.push_back(c.radius());
+    obstacle_detector::CircleObstacle circle;
+
+    circle.center.x = c.center().x;
+    circle.center.y = c.center().y;
+    circle.radius = c.radius();
+
+    obstacles.circles.push_back(circle);
   }
 
-  obstacles_pub_.publish(obst_msg);
-}
-
-void ObstacleDetector::publishMarkers() {
-  visualization_msgs::MarkerArray marker_array;
-
-  visualization_msgs::Marker circle_marker;
-  circle_marker.header.stamp = ros::Time::now();
-
-  if (p_transform_to_world)
-    circle_marker.header.frame_id = p_world_frame_;
-  else
-    circle_marker.header.frame_id = p_scanner_frame_;
-
-  circle_marker.ns = "circles";
-  circle_marker.id = 0;
-  circle_marker.type = visualization_msgs::Marker::CYLINDER;
-  circle_marker.action = visualization_msgs::Marker::ADD;
-  circle_marker.pose.position.x = 0.0;
-  circle_marker.pose.position.y = 0.0;
-  circle_marker.pose.position.z = -0.1;
-  circle_marker.pose.orientation.x = 0.0;
-  circle_marker.pose.orientation.y = 0.0;
-  circle_marker.pose.orientation.z = 0.0;
-  circle_marker.pose.orientation.w = 1.0;
-  circle_marker.scale.x = 0.01;
-  circle_marker.scale.y = 0.01;
-  circle_marker.scale.z = 0.1;
-  circle_marker.color.r = 1.0;
-  circle_marker.color.g = 0.0;
-  circle_marker.color.b = 1.0;
-  circle_marker.color.a = 0.2;
-  circle_marker.lifetime = ros::Duration(0.1);
-
-  int i = 0;
-  for (const Circle& circle : circles_) {
-    circle_marker.pose.position.x = circle.center().x;
-    circle_marker.pose.position.y = circle.center().y;
-    circle_marker.scale.x = 2.0 * circle.radius();
-    circle_marker.scale.y = 2.0 * circle.radius();
-    circle_marker.id = i++;
-
-    marker_array.markers.push_back(circle_marker);
-  }
-
-  visualization_msgs::Marker segments_marker;
-  segments_marker.header.stamp = ros::Time::now();
-
-  if (p_transform_to_world)
-    segments_marker.header.frame_id = p_world_frame_;
-  else
-    segments_marker.header.frame_id = p_scanner_frame_;
-
-  segments_marker.ns = "segments";
-  segments_marker.id = 0;
-  segments_marker.type = visualization_msgs::Marker::LINE_LIST;
-  segments_marker.action = visualization_msgs::Marker::ADD;
-  segments_marker.pose.position.x = 0.0;
-  segments_marker.pose.position.y = 0.0;
-  segments_marker.pose.position.z = 0.1;
-  segments_marker.pose.orientation.x = 0.0;
-  segments_marker.pose.orientation.y = 0.0;
-  segments_marker.pose.orientation.z = 0.0;
-  segments_marker.pose.orientation.w = 1.0;
-  segments_marker.scale.x = 0.01;
-  segments_marker.scale.y = 0.01;
-  segments_marker.scale.z = 0.01;
-  segments_marker.color.r = 1.0;
-  segments_marker.color.g = 0.0;
-  segments_marker.color.b = 0.0;
-  segments_marker.color.a = 1.0;
-  segments_marker.lifetime = ros::Duration(0.1);
-
-  for (const Segment& segment : segments_) {
-    geometry_msgs::Point pt;
-    pt.x = segment.first_point().x;
-    pt.y = segment.first_point().y;
-    segments_marker.points.push_back(pt);
-
-    pt.x = segment.last_point().x;
-    pt.y = segment.last_point().y;
-    segments_marker.points.push_back(pt);
-  }
-
-  marker_array.markers.push_back(segments_marker);
-
-  markers_pub_.publish(marker_array);
+  obstacles_pub_.publish(obstacles);
 }
 
 int main(int argc, char** argv) {

@@ -48,10 +48,12 @@ namespace obstacle_detector
 class Segment
 {
 public:
-  Segment(const Point& p1 = Point(), const Point& p2 = Point()) : p1_(p1), p2_(p2) {
-    assert(p1 != p2);
-
-    if (p1.cross(p2) < 0.0) // Swap if not counter-clockwise.
+  Segment(const Point& p1 = Point(), const Point& p2 = Point()) {
+    //assert(p1 != p2);
+    // Swap if not counter-clockwise.
+    if (p1.cross(p2) > 0.0)
+      p1_ = p1, p2_ = p2;
+    else
       p1_ = p2, p2_ = p1;
   }
 
@@ -71,15 +73,12 @@ public:
   double distanceTo(const Point& p) const { return (p - projection(p)).length(); }
 
   friend std::ostream& operator<<(std::ostream& out, const Segment& s)
-  { out << s.p1_ << " " << s.p2_; return out; }
+  { out << "p1: " << s.p1_ << ", p2: " << s.p2_; return out; }
 
 private:
   Point p1_;
   Point p2_;
   std::list<Point> point_set_;
-
-  bool complete_;   // Complete line segment
-  bool isolated_;   // Not part of bigger cluster
 };
 
 } // namespace obstacle_detector

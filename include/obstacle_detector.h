@@ -35,19 +35,10 @@
 
 #pragma once
 
-#include <list>
-#include <vector>
-#include <string>
-#include <fstream>
-
 #include <ros/ros.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/PointStamped.h>
+#include <tf/transform_listener.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <tf/transform_listener.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/point.h"
@@ -66,7 +57,7 @@ public:
 private:
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   void pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl);
-  void updateParams(const ros::TimerEvent& event);
+  void updateParams();
 
   void processPoints();
   void groupPointsAndDetectSegments();
@@ -79,20 +70,15 @@ private:
   bool compareAndMergeCircles(Circle& c1, Circle& c2);
 
   void publishObstacles();
-  void publishMarkers();
-
   void transformToWorld();
-  void saveSnapshot();
 
-  // ROS handlers
+  // ROS handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Subscriber scan_sub_;
   ros::Subscriber pcl_sub_;
-  ros::Publisher  markers_pub_;
   ros::Publisher  obstacles_pub_;
-  ros::Timer      params_tim_;
 
   tf::TransformListener tf_listener_;
 
@@ -104,14 +90,9 @@ private:
   // Parameters
   std::string p_world_frame_;     // Name of the world coordinate frame
   std::string p_scanner_frame_;   // Name of the scanner coordinate frame
-  std::string p_scan_topic_;      // Name of the topic of scans subscription
-  std::string p_pcl_topic_;       // Name of the topic of scans subscription
-  std::string p_obstacles_topic_; // Name of the topic of obstacles publishing
-  std::string p_markers_topic_;   // Name of the topic of markers publishing
 
   bool p_use_scan_;               // Use data from scans
   bool p_use_pcl_;                // Use data from point clouds
-  bool p_publish_markers_;        // If true, visualisation_markers will be published
   bool p_use_split_and_merge_;    // If false, iterative closest point is used instead of split and merge
   bool p_transform_to_world;      // Transform obstacles to world coordinate frame
 

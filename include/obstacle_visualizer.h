@@ -36,44 +36,24 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <obstacle_detector/Obstacles.h>
 
 namespace obstacle_detector
 {
 
-class ScansMerger
+class ObstacleVisualizer
 {
 public:
-  ScansMerger();
+  ObstacleVisualizer();
 
 private:
-  void frontScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  void rearScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  void publishPCL();
-  void updateParams();
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
 
-  // ROS handles
+  // ROS handlers
   ros::NodeHandle nh_;
-  ros::NodeHandle nh_local_;
-
-  ros::Subscriber front_scan_sub_;
-  ros::Subscriber rear_scan_sub_;
-  ros::Publisher  pcl_pub_;
-
-  sensor_msgs::PointCloud pcl_msg_;
-
-  bool first_scan_received_;
-  bool second_scan_received_;
-  int unreceived_scans1_;
-  int unreceived_scans2_;
-
-  // Parameters
-  std::string p_frame_id_;          // TF frame name for the pcl message
-
-  bool p_omit_overlapping_scans_;   // Omit the points which project onto area of the other scanner
-  double p_scanners_separation_;    // Distance between scanner centers
-  int p_max_unreceived_scans_;      // Maximum allowable unreceived scans to start publishing one scan
+  ros::Subscriber obstacles_sub_;
+  ros::Publisher  markers_pub_;
 };
 
 } // namespace obstacle_detector
