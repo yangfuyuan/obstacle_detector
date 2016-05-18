@@ -2,7 +2,7 @@
 
 The obstacle_detector package provides utilities to detect obstacles from a 2D laser scan or an ordered point cloud. Detected obstacles come in a form of segments and circles representing groups of points. The package requires [Armadillo C++](http://arma.sourceforge.net) library for compilation and runtime .
 
-### The nodes
+### 1. The nodes
 
 The package contains several nodes, which are:
 
@@ -46,7 +46,7 @@ The auxiliary node which converts two laser scans of type `sensor_msgs/LaserScan
 #### The static_scan_publisher node
 The auxiliary node which imitates a laser scanner and publishes a static, 360 deg laser scan of type `sensor_msgs/LaserScan` under topic `scan`.
 
-### The messages
+### 2. The messages
 
 The package provide three custom messages:
 
@@ -61,7 +61,7 @@ The package provide three custom messages:
   * `obstacle_detector/SegmentObstacle[] segments`
   * `obstacle_detector/CircleObstacle[] circles`
 
-### The launch files
+### 3. The launch files
 
 Provided launch files are good examples of how to use obstacle_detector package. They give a full list of parameters used by each of provided nodes.
 
