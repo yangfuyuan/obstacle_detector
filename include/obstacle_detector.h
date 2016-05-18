@@ -72,7 +72,7 @@ private:
   void publishObstacles();
   void transformToWorld();
 
-  // ROS handlers
+  // ROS handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 

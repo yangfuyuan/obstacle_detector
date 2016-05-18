@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
 
   scan.intensities = std::vector<float>();
 
+  ROS_INFO("Static Scan Publisher [OK]");
   ros::Rate loop_rate(10);
   while (ros::ok()) {
 
