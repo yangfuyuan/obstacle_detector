@@ -24,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -46,11 +46,11 @@ Visualization Manager:
       Plane Cell Count: 20
       Reference Frame: world
       Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
+    - Alpha: 0.7
+      Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 0
+        Min Value: 0
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -73,28 +73,35 @@ Visualization Manager:
       Style: Points
       Topic: /scan
       Use Fixed Frame: true
-      Use rainbow: true
+      Use rainbow: false
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: obstacles_markers
       Name: Obstacles
       Namespaces:
-        {}
+        circles: true
+        segments: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
       Enabled: true
-      Frame Timeout: 15
+      Frame Timeout: 9999
       Frames:
         All Enabled: true
+        scanner:
+          Value: true
+        world:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          scanner:
+            {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -129,7 +136,7 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 96.1689
+      Scale: 99.3635
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 0
@@ -151,5 +158,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1615
-  X: 65
+  X: 58
   Y: 24
