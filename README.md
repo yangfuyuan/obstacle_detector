@@ -1,6 +1,6 @@
 ## The obstacle_detector package 
 
-The obstacle_detector package provides utilities to detect obstacles from a 2D laser scan or an ordered point cloud. Detected obstacles come in a form of segments and circles representing groups of points. The package requires [Armadillo C++](http://arma.sourceforge.net) library for compilation and runtime .
+The obstacle_detector package provides utilities to detect obstacles from a 2D laser scan or an ordered point cloud. Detected obstacles come in a form of segments and circles. The package requires [Armadillo C++](http://arma.sourceforge.net) library for compilation and runtime .
 
 ### 1. The nodes
 
@@ -18,18 +18,18 @@ The main node which converts messages of type `sensor_msgs/LaserScan` from topic
 * `max_x_range` (double, default: 2.0) - limitation on global coordinates (obstacles detected behind these limitations will not be published),
 * `min_x_range` (double, default: -2.0) - as above,
 * `max_y_range` (double, default: 2.0) - as above,
-* `min_y_range` (double, default: -2.0) - as above,
+* `min_y_range` (double, default: -2.0) - as above.
 
 The following set of local parameters is dedicated to the algorithm itself:
 
 * `use_split_and_merge` (bool, default: false) - choose wether to use Iterative End Point Fit or Split And Merge algorithm to detect segments,
 * `min_group_points` (int, default: 3) - minimum number of points comprising a group to be further processed,
-* `max_group_distance` (double, default: 0.100) - if the distance between two points is greater than this, start a new group,
+* `max_group_distance` (double, default: 0.100) - if the distance between two points is greater than this value, start a new group,
 * `distance_proportion` (double, default: 0.006136) - enlarge the allowable distance between point proportionally to the range of point,
 * `max_split_distance` (double, default: 0.100) - if a point in group lays further from a leading line than this value, split the group, 
 * `max_merge_separation` (double, default: 0.200) - if distance between obstacles is smaller than this value, consider merging them,
 * `max_merge_spread` (double, default: 0.070) - merge two segments if all of their extreme points lay closer to the leading line than this value,
-* `max_circle_radius` (double, default: 0.300) - if a circle obtained from a group would have greater raius than this value, skip it, 
+* `max_circle_radius` (double, default: 0.300) - if a circle obtained from a group would have greater radius than this value, skip it, 
 * `radius_enlargement` (double, default: 0.050) - enlarge the circles radius by this value.
 
 #### The obstacle_visualizer node
