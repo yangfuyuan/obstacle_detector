@@ -63,10 +63,10 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   circle_marker.pose.orientation.w = 1.0;
   circle_marker.scale.z = 0.1;
   circle_marker.color.r = 0.2;
-  circle_marker.color.g = 0.8;
+  circle_marker.color.g = 0.6;
   circle_marker.color.b = 0.2;
   circle_marker.color.a = 1.0;
-  circle_marker.lifetime = ros::Duration(0.1);
+  circle_marker.lifetime = ros::Duration();
 
   for (auto circle : obstacles->circles) {
     circle_marker.pose.position.x = circle.center.x;
@@ -100,7 +100,7 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   segments_marker.color.g = 0.0;
   segments_marker.color.b = 0.0;
   segments_marker.color.a = 1.0;
-  segments_marker.lifetime = ros::Duration(0.1);
+  segments_marker.lifetime = ros::Duration();
 
   for (auto segment : obstacles->segments) {
     segments_marker.points.push_back(segment.first_point);
