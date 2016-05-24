@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2015, Poznan University of Technology
@@ -36,85 +36,76 @@
 #pragma once
 
 #define ARMA_DONT_USE_CXX11
-
 #include <armadillo>
-#include <ros/ros.h>
-#include <obstacle_detector/Obstacles.h>
 
-#include "../include/circle.h"
-#include "../include/kalman.h"
-
-namespace obstacle_detector
+class KalmanFilter
 {
-
-double costFunction(const CircleObstacle& c1, const CircleObstacle& c2) {
-  return sqrt(pow(c1.center.x - c2.center.x, 2.0) + pow(c1.center.y - c2.center.y, 2.0) + pow(c1.radius - c2.radius, 2.0));
-}
-
-class TrackedObstacle {
 public:
-  TrackedObstacle(CircleObstacle init_obstacle) {
-    obstacle = init_obstacle;
-    fade_counter = 30;
-    kf = new KalmanFilter(0, 3, 6); // 0 inputs, 3 outputs, 6 states
+  KalmanFilter(uint dim_in, uint dim_out, uint dim_state) : l(dim_in), m(dim_out), n(dim_state) {
+    using arma::mat;
+    using arma::vec;
 
-    double TP = 0.01;
+    A = mat(n,n).eye();
+    if (l > 0)
+      B = mat(n,l).zeros();
+    C = mat(m,n).zeros();
 
-    kf->A(0, 1) = TP;
-    kf->A(2, 3) = TP;
-    kf->A(4, 5) = TP;
+    Q = mat(n,n).eye();
+    R = mat(m,m).eye();
+    P = mat(n,n).eye();
 
-    kf->C(0, 0) = 1;
-    kf->C(1, 2) = 1;
-    kf->C(2, 4) = 1;
+    K = mat(n,m).eye();
+
+    if (l > 0)
+      u = vec(l).zeros();
+    q_pred = vec(n).zeros();
+    q_est = vec(n).zeros();
+    y = vec(m).zeros();
   }
 
-  ~TrackedObstacle() {
-    delete kf;
+  void updateState() {
+    using arma::mat;
+
+    // Identity matrix
+    mat I = arma::eye<mat>(n,n);
+
+    // Predict State
+    if (l > 0)
+      q_pred = A * q_est + B * u;
+    else
+      q_pred = A * q_est;
+
+    P = A * P * trans(A) + Q;
+
+    // Correct state
+    K = P * trans(C) * inv(C * P * trans(C) + R);
+    q_est = q_pred + K * (y - C * q_pred);
+    P = (I - K * C) * P;
   }
 
-  void updateMeasurement(const CircleObstacle& new_obstacle) {
-    kf->y(0) = new_obstacle.center.x;
-    kf->y(1) = new_obstacle.center.y;
-    kf->y(2) = new_obstacle.radius;
+public:
+  // System matrices:
+  arma::mat A;       // State
+  arma::mat B;       // Input
+  arma::mat C;       // Output
 
-    fade_counter = 30;
-  }
+  // Covariance matrices:
+  arma::mat Q;       // Process
+  arma::mat R;       // Measurement
+  arma::mat P;       // Estimate error
 
-  void updateTracking() {
-    kf->updateState();
+  // Kalman gain matrix:
+  arma::mat K;
 
-    obstacle.center.x = kf->q_est(0);
-    obstacle.center.y = kf->q_est(1);
-    obstacle.radius = kf->q_est(2);
-
-    fade_counter--;
-  }
-
-  CircleObstacle obstacle;
-  int fade_counter; // If the fade counter reaches 0, remove the obstacle from the list
+  // Signals:
+  arma::vec u;       // Input
+  arma::vec q_pred;  // Predicted state
+  arma::vec q_est;   // Estimated state
+  arma::vec y;       // Measurement
 
 private:
-  KalmanFilter* kf;
+  // Dimensions:
+  uint l;             // Input
+  uint m;             // Output
+  uint n;             // State
 };
-
-class ObstacleTracker {
-public:
-  ObstacleTracker();
-
-private:
-  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-
-  // ROS handlers
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_local_;
-
-  ros::Subscriber obstacles_sub_;
-  ros::Publisher obstacles_pub_;
-
-  // Obstacle Tracker specific fields
-  std::vector<TrackedObstacle> tracked_obstacles_;
-  std::vector<CircleObstacle> untracked_obstacles_;
-};
-
-} // namespace obstacle_detector

@@ -31,8 +31,8 @@ add_executable(obstacle_detector src/obstacle_detector.cpp include/obstacle_dete
 target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES})
 add_dependencies(obstacle_detector ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-add_executable(obstacle_tracker src/obstacle_tracker.cpp include/obstacle_tracker.h)
-target_link_libraries(obstacle_tracker ${catkin_LIBRARIES})
+add_executable(obstacle_tracker src/obstacle_tracker.cpp include/obstacle_tracker.h include/kalman.h)
+target_link_libraries(obstacle_tracker ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES})
 add_dependencies(obstacle_tracker ${PROJECT_NAME}_gencpp)
 
 add_executable(obstacle_visualizer src/obstacle_visualizer.cpp include/obstacle_visualizer.h)
