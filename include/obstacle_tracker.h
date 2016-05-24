@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2015, Poznan University of Technology
@@ -38,12 +38,7 @@
 #define ARMA_DONT_USE_CXX11
 
 #include <armadillo>
-#include <list>
-#include <vector>
-
 #include <ros/ros.h>
-#include <obstacle_detector/CircleObstacle.h>
-#include <obstacle_detector/SegmentObstacle.h>
 #include <obstacle_detector/Obstacles.h>
 
 #include "../include/circle.h"
@@ -51,9 +46,20 @@
 namespace obstacle_detector
 {
 
-double CircleDistance(const CircleObstacle& c1, const CircleObstacle& c2) {
-  return sqrt(pow(c1.center.x - c2.center.x, 2.0) + pow(c1.center.y - c2.center.y, 2.0));
+double costFunction(const CircleObstacle& c1, const CircleObstacle& c2) {
+  return sqrt(pow(c1.center.x - c2.center.x, 2.0) + pow(c1.center.y - c2.center.y, 2.0) + pow(c1.radius - c2.radius, 2.0));
 }
+
+struct TrackData {
+  int fade_counter; // If the fade counter reaches 0, remove the obstacle from the list
+  double v_x;       // Velocity of the obstacle
+  double v_y;
+};
+
+struct TrackedObstacle {
+  CircleObstacle obstacle;
+  TrackData track_data;
+};
 
 class ObstacleTracker {
 public:
@@ -61,8 +67,8 @@ public:
 
 private:
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-  void findCorrespondences(const arma::mat& distances, arma::imat& correspondences);
 
+  // ROS handlers
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
