@@ -53,49 +53,55 @@ double costFunction(const CircleObstacle& c1, const CircleObstacle& c2) {
 
 class TrackedObstacle {
 public:
-  TrackedObstacle(CircleObstacle init_obstacle) {
+  TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_max) : kf(0, 3, 6) {
     obstacle = init_obstacle;
-    fade_counter = 30;
-    kf = new KalmanFilter(0, 3, 6); // 0 inputs, 3 outputs, 6 states
+    fade_counter_size = fade_counter_max;
 
     double TP = 0.01;
 
-    kf->A(0, 1) = TP;
-    kf->A(2, 3) = TP;
-    kf->A(4, 5) = TP;
+    kf.A(0, 1) = TP;
+    kf.A(2, 3) = TP;
+    kf.A(4, 5) = TP;
 
-    kf->C(0, 0) = 1;
-    kf->C(1, 2) = 1;
-    kf->C(2, 4) = 1;
-  }
+    kf.C(0, 0) = 1;
+    kf.C(1, 2) = 1;
+    kf.C(2, 4) = 1;
 
-  ~TrackedObstacle() {
-    delete kf;
+    kf.R *= 0.0001;
+
+    kf.q_pred(0) = obstacle.center.x;
+    kf.q_pred(2) = obstacle.center.y;
+    kf.q_pred(4) = obstacle.radius;
+
+    kf.q_est(0) = obstacle.center.x;
+    kf.q_est(2) = obstacle.center.y;
+    kf.q_est(4) = obstacle.radius;
   }
 
   void updateMeasurement(const CircleObstacle& new_obstacle) {
-    kf->y(0) = new_obstacle.center.x;
-    kf->y(1) = new_obstacle.center.y;
-    kf->y(2) = new_obstacle.radius;
+    kf.y(0) = new_obstacle.center.x;
+    kf.y(1) = new_obstacle.center.y;
+    kf.y(2) = new_obstacle.radius;
 
-    fade_counter = 30;
+    fade_counter = fade_counter_size;
   }
 
   void updateTracking() {
-    kf->updateState();
+    kf.updateState();
 
-    obstacle.center.x = kf->q_est(0);
-    obstacle.center.y = kf->q_est(1);
-    obstacle.radius = kf->q_est(2);
+    obstacle.center.x = kf.q_est(0);
+    obstacle.center.y = kf.q_est(2);
+    obstacle.radius = kf.q_est(4);
 
     fade_counter--;
   }
 
   CircleObstacle obstacle;
-  int fade_counter; // If the fade counter reaches 0, remove the obstacle from the list
+  int fade_counter;       // If the fade counter reaches 0, remove the obstacle from the list
 
 private:
-  KalmanFilter* kf;
+  KalmanFilter kf;
+  int fade_counter_size;
 };
 
 class ObstacleTracker {
@@ -113,8 +119,12 @@ private:
   ros::Publisher obstacles_pub_;
 
   // Obstacle Tracker specific fields
+  Obstacles tracked_obstacles_msg_;
+
   std::vector<TrackedObstacle> tracked_obstacles_;
   std::vector<CircleObstacle> untracked_obstacles_;
+
+  int p_fade_counter_; // After this many iteration without update, the obstacle will be discarded
 };
 
 } // namespace obstacle_detector

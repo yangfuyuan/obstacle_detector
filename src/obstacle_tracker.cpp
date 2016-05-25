@@ -8,18 +8,21 @@ ObstacleTracker::ObstacleTracker() : nh_(""), nh_local_("~") {
   obstacles_sub_ = nh_.subscribe("obstacles", 10, &ObstacleTracker::obstaclesCallback, this);
   obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>("tracked_obstacles", 10);
 
+  nh_local_.param("fade_counter", p_fade_counter_, 50);
+
   ROS_INFO("Obstacle Tracker [OK]");
   ros::Rate rate(100);
 
   while (ros::ok()) {
     ros::spinOnce();
 
-    Obstacles obstacles_msg;
+    tracked_obstacles_msg_.header.stamp = ros::Time::now();
+    tracked_obstacles_msg_.circles.clear();
 
     for (auto it = tracked_obstacles_.begin(); it != tracked_obstacles_.end(); ++it) {
       if (it->fade_counter > 0) {
         it->updateTracking();
-        obstacles_msg.circles.push_back(it->obstacle);
+        tracked_obstacles_msg_.circles.push_back(it->obstacle);
       }
       else {
         it = tracked_obstacles_.erase(it);
@@ -27,19 +30,18 @@ ObstacleTracker::ObstacleTracker() : nh_(""), nh_local_("~") {
       }
     }
 
-    obstacles_pub_.publish(obstacles_msg);
+    obstacles_pub_.publish(tracked_obstacles_msg_);
 
     rate.sleep();
   }
 }
 
 void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles) {
+  tracked_obstacles_msg_.header.frame_id = obstacles->header.frame_id;
+
   int K = obstacles->circles.size();
   int L = tracked_obstacles_.size();
   int M = untracked_obstacles_.size();
-
-  cout << "un: " << untracked_obstacles_.size() << endl;
-  cout << "tr: " << tracked_obstacles_.size() << endl;
 
   if (L + M == 0) {
     untracked_obstacles_.assign(obstacles->circles.begin(), obstacles->circles.end());
@@ -86,14 +88,14 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
 //        cout << "Conflict" << endl;
 //    }
 
-    if (min_indices[k] == -1) { // New obstacle
+    if (min_indices[k] == -1) {
       new_untracked_obstacles.push_back(obstacles->circles[k]);
     }
-    else if (min_indices[k] < L) { // Correspondent with tracked obstacle
+    else if (min_indices[k] < L) {
       tracked_obstacles_[min_indices[k]].updateMeasurement(obstacles->circles[k]);
     }
-    else if (min_indices[k] >= L) { // Correspondent with untracked obstacle
-      TrackedObstacle to(untracked_obstacles_[min_indices[k] - L]);
+    else if (min_indices[k] >= L) {
+      TrackedObstacle to = TrackedObstacle(untracked_obstacles_[min_indices[k] - L], p_fade_counter_);
       to.updateMeasurement(obstacles->circles[k]);
       tracked_obstacles_.push_back(to);
     }
