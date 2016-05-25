@@ -20,20 +20,24 @@
 
     <param name="max_merge_separation" value="0.200"/>
     <param name="max_merge_spread"     value="0.070"/>
-    <param name="max_circle_radius"    value="0.300"/>
+    <param name="max_circle_radius"    value="0.500"/>
     <param name="radius_enlargement"   value="0.050"/>
 
-    <param name="max_scanner_range"    value="5.0"/>
-    <param name="max_x_range"          value="2.0"/>
-    <param name="min_x_range"          value="-2.0"/>
-    <param name="max_y_range"          value="1.0"/>
-    <param name="min_y_range"          value="-1.0"/>
+    <param name="max_scanner_range"    value="6.0"/>
+    <param name="max_x_range"          value="5.0"/>
+    <param name="min_x_range"          value="-5.0"/>
+    <param name="max_y_range"          value="5.0"/>
+    <param name="min_y_range"          value="-5.0"/>
   </node>
   
-  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen"/>
-
-  <node pkg="obstacle_detector" type="obstacle_tracker" name="obstacle_tracker" output="screen"/>
+  <node pkg="obstacle_detector" type="obstacle_tracker" name="obstacle_tracker" output="screen">
+    <param name="fade_counter" value="50"/>
+  </node>
   
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen">
+    <remap from="obstacles" to="tracked_obstacles"/>
+  </node>
+
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find obstacle_detector)/resources/obstacle_detector.rviz"/>
 </launch>
 
