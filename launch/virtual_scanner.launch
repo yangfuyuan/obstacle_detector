@@ -31,8 +31,12 @@
   </node>
   
   <node pkg="obstacle_detector" type="obstacle_tracker" name="obstacle_tracker" output="screen">
-    <param name="fade_counter" value="50"/>
-  </node>  
+    <param name="fade_counter"            value="50"/>
+    <param name="pose_measure_variance"   value="1.0"/>
+    <param name="radius_measure_variance" value="1.0"/>
+    <param name="pose_process_variance"   value="0.2"/>    
+    <param name="radius_process_variance" value="0.2"/>
+  </node>
 
   <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen">
     <param name="circles_color"  value="3"/>

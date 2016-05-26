@@ -35,7 +35,11 @@ The following set of local parameters is dedicated to the algorithm itself:
 #### 1.2. The obstacle_tracker node
 The node tracks and filters the circular obstacles with the use of Kalman Filter. The node works in a synchronous manner with the rate of 100 Hz. If detected obstacles are published less often, the tracker will super-sample them and smoothen their position and radius (their changes in time). The following local parameter can be used to tune the node:
 
-* `~fade_counter` (int, default: 50) - number of samples after which (if no update occured) the obstacle will be discarded.
+* `~fade_counter` (int, default: 50) - number of samples after which (if no update occured) the obstacle will be discarded,
+* `~pose_measure_variance` (double, default 1.0) - measurement variance of obstacles position (parameter of Kalman Filter),
+* `~pose_process_variance` (double, default 1.0) - process variance of obstacles position (parameter of Kalman Filter),
+* `~radius_measure_variance` (double, default 1.0) - measurement variance of obstacles radius (parameter of Kalman Filter),
+* `~radius_process_variance` (double, default 1.0) - process variance of obstacles position (parameter of Kalman Filter).
 
 #### 1.3. The obstacle_visualizer node
 The auxiliary node which converts messages of type `obstacles_detector/Obstacles` from topic `obstacles` into Rviz markers of type `visualization_msgs/MarkerArray`, published under topic `obstacles_markers`. The node uses few parameters to customize the markers:

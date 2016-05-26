@@ -41,7 +41,6 @@
 #include <ros/ros.h>
 #include <obstacle_detector/Obstacles.h>
 
-#include "../include/circle.h"
 #include "../include/kalman.h"
 
 namespace obstacle_detector
@@ -53,45 +52,54 @@ double costFunction(const CircleObstacle& c1, const CircleObstacle& c2) {
 
 class TrackedObstacle {
 public:
-  TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_max) : kf(0, 3, 6) {
+  TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_max) : kf_(0, 3, 6) {
     obstacle = init_obstacle;
-    fade_counter_size = fade_counter_max;
+    fade_counter_size_ = fade_counter_max;
+    fade_counter = fade_counter_max;
 
     double TP = 0.01;
 
-    kf.A(0, 1) = TP;
-    kf.A(2, 3) = TP;
-    kf.A(4, 5) = TP;
+    kf_.A(0, 1) = TP;
+    kf_.A(2, 3) = TP;
+    kf_.A(4, 5) = TP;
 
-    kf.C(0, 0) = 1;
-    kf.C(1, 2) = 1;
-    kf.C(2, 4) = 1;
+    kf_.C(0, 0) = 1;
+    kf_.C(1, 2) = 1;
+    kf_.C(2, 4) = 1;
 
-    kf.R *= 0.0001;
+    kf_.q_pred(0) = obstacle.center.x;
+    kf_.q_pred(2) = obstacle.center.y;
+    kf_.q_pred(4) = obstacle.radius;
 
-    kf.q_pred(0) = obstacle.center.x;
-    kf.q_pred(2) = obstacle.center.y;
-    kf.q_pred(4) = obstacle.radius;
+    kf_.q_est(0) = obstacle.center.x;
+    kf_.q_est(2) = obstacle.center.y;
+    kf_.q_est(4) = obstacle.radius;
+  }
 
-    kf.q_est(0) = obstacle.center.x;
-    kf.q_est(2) = obstacle.center.y;
-    kf.q_est(4) = obstacle.radius;
+  void setCovariances(double pose_m_var, double pose_p_var, double radius_m_var, double radius_p_var) {
+    kf_.R(0, 0) = pose_m_var;
+    kf_.R(1, 1) = pose_m_var;
+    kf_.R(2, 2) = radius_m_var;
+
+    kf_.Q(0, 0) = pose_p_var;
+    kf_.Q(2, 2) = pose_p_var;
+    kf_.Q(4, 4) = radius_p_var;
   }
 
   void updateMeasurement(const CircleObstacle& new_obstacle) {
-    kf.y(0) = new_obstacle.center.x;
-    kf.y(1) = new_obstacle.center.y;
-    kf.y(2) = new_obstacle.radius;
+    kf_.y(0) = new_obstacle.center.x;
+    kf_.y(1) = new_obstacle.center.y;
+    kf_.y(2) = new_obstacle.radius;
 
-    fade_counter = fade_counter_size;
+    fade_counter = fade_counter_size_;
   }
 
   void updateTracking() {
-    kf.updateState();
+    kf_.updateState();
 
-    obstacle.center.x = kf.q_est(0);
-    obstacle.center.y = kf.q_est(2);
-    obstacle.radius = kf.q_est(4);
+    obstacle.center.x = kf_.q_est(0);
+    obstacle.center.y = kf_.q_est(2);
+    obstacle.radius = kf_.q_est(4);
 
     fade_counter--;
   }
@@ -100,8 +108,8 @@ public:
   int fade_counter;       // If the fade counter reaches 0, remove the obstacle from the list
 
 private:
-  KalmanFilter kf;
-  int fade_counter_size;
+  KalmanFilter kf_;
+  int fade_counter_size_;
 };
 
 class ObstacleTracker {
@@ -125,6 +133,10 @@ private:
   std::vector<CircleObstacle> untracked_obstacles_;
 
   int p_fade_counter_; // After this many iteration without update, the obstacle will be discarded
+  double p_pose_measure_variance_;
+  double p_pose_process_variance_;
+  double p_radius_measure_variance_;
+  double p_radius_process_variance_;
 };
 
 } // namespace obstacle_detector

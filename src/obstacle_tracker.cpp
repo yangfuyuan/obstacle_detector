@@ -9,6 +9,10 @@ ObstacleTracker::ObstacleTracker() : nh_(""), nh_local_("~") {
   obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>("tracked_obstacles", 10);
 
   nh_local_.param("fade_counter", p_fade_counter_, 50);
+  nh_local_.param("pose_measure_variance", p_pose_measure_variance_, 1.0);
+  nh_local_.param("pose_process_variance", p_pose_process_variance_, 1.0);
+  nh_local_.param("radius_measure_variance", p_radius_measure_variance_, 1.0);
+  nh_local_.param("radius_process_variance", p_radius_process_variance_, 1.0);
 
   ROS_INFO("Obstacle Tracker [OK]");
   ros::Rate rate(100);
@@ -53,15 +57,17 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
    * The bigger cost, the less similar they are.
    * K rows of cost_matrix represent new obstacles.
    * L+M columns of cost matrix represent old tracked and untracked obstacles.
+   * Vector of minimal indices keeps the index of obstacle with minimum
+   * cost related to k-th new obstacle.
    */
   mat cost_matrix = mat(K, L + M, fill::zeros);
-  vector<int> min_indices(K, -1); // minimum index -1 means no correspondence has been found
+  vector<int> min_indices(K, -1); // Minimum index -1 means no correspondence has been found
 
   for (int k = 0; k < K; ++k) {
-    double min_cost = 100000.0;   // TODO: Find minimum cost allowable and set it here (if cost is bigger - k-th new obstacle goes to untracked)
+    double min_cost = 1.0;   // TODO: Find minimum cost allowable and set it here (if cost is bigger - k-th new obstacle goes to untracked)
 
     for (int l = 0; l < L; ++l) {
-      cost_matrix (k, l) = costFunction(obstacles->circles[k], tracked_obstacles_[l].obstacle);
+      cost_matrix(k, l) = costFunction(obstacles->circles[k], tracked_obstacles_[l].obstacle);
 
       if (cost_matrix(k, l) < min_cost) {
         min_cost = cost_matrix(k, l);
@@ -70,7 +76,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
     }
 
     for (int m = 0; m < M; ++m) {
-      cost_matrix (k, m + L) = costFunction(obstacles->circles[k], untracked_obstacles_[m]);
+      cost_matrix(k, m + L) = costFunction(obstacles->circles[k], untracked_obstacles_[m]);
 
       if (cost_matrix(k, m + L) < min_cost) {
         min_cost = cost_matrix(k, m + L);
@@ -82,11 +88,19 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   vector<CircleObstacle> new_untracked_obstacles;
 
   for (int k = 0; k < min_indices.size(); ++k) {
-//    // Check for conflicts - two old obstacles pretending to merge with the new one
-//    for (int j = k+1; j < min_indices.size(); ++j) {
-//      if (min_indices[k] == min_indices[j])
-//        cout << "Conflict" << endl;
-//    }
+    /*
+     * If two obstacles connect into one, we call it a fusion.
+     * If one obstacle divides into two, we call it a fission.
+     * A fusion occurs if one new obstacle has two old (tracked or not) correspondents.
+     * A fission occurs if two new obstacles have one old (tracked or not) correspondent.
+     */
+
+    //    for (int j = k+1; j < min_indices.size(); ++j) {
+    //      if (min_indices[k] == min_indices[j])
+    //        cout << "Fission" << endl;
+    //    }
+
+    // TODO: search for minimal indices over old obstacles to find possible fusions.
 
     if (min_indices[k] == -1) {
       new_untracked_obstacles.push_back(obstacles->circles[k]);
@@ -96,6 +110,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
     }
     else if (min_indices[k] >= L) {
       TrackedObstacle to = TrackedObstacle(untracked_obstacles_[min_indices[k] - L], p_fade_counter_);
+      to.setCovariances(p_pose_measure_variance_, p_pose_process_variance_, p_radius_measure_variance_, p_radius_process_variance_);
       to.updateMeasurement(obstacles->circles[k]);
       tracked_obstacles_.push_back(to);
     }
