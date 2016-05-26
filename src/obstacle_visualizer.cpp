@@ -37,9 +37,16 @@
 
 using namespace obstacle_detector;
 
-ObstacleVisualizer::ObstacleVisualizer() : nh_("") {
+ObstacleVisualizer::ObstacleVisualizer() : nh_(""), nh_local_("~") {
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>("obstacles", 10, &ObstacleVisualizer::obstaclesCallback, this);
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("obstacles_markers", 10);
+
+  nh_local_.param("circles_color", p_circles_color_, 1);
+  nh_local_.param("segments_color", p_segments_color_, 1);
+  nh_local_.param("alpha", p_alpha_, 1.0);
+
+  setColor(circles_color_, p_circles_color_, p_alpha_);
+  setColor(segments_color_, p_segments_color_, p_alpha_);
 
   ROS_INFO("Obstacle Visualizer [OK]");
   ros::spin();
@@ -56,16 +63,13 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   circle_marker.id = 0;
   circle_marker.type = visualization_msgs::Marker::CYLINDER;
   circle_marker.action = visualization_msgs::Marker::ADD;
-  circle_marker.pose.position.z = -0.1;
+  circle_marker.pose.position.z = -0.2;
   circle_marker.pose.orientation.x = 0.0;
   circle_marker.pose.orientation.y = 0.0;
   circle_marker.pose.orientation.z = 0.0;
   circle_marker.pose.orientation.w = 1.0;
   circle_marker.scale.z = 0.1;
-  circle_marker.color.r = 0.2;
-  circle_marker.color.g = 0.6;
-  circle_marker.color.b = 0.2;
-  circle_marker.color.a = 1.0;
+  circle_marker.color = circles_color_;
   circle_marker.lifetime = ros::Duration(0.0999);
 
   for (auto circle : obstacles->circles) {
@@ -95,11 +99,8 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   segments_marker.pose.orientation.w = 1.0;
   segments_marker.scale.x = 0.04;
   segments_marker.scale.y = 0.04;
-  segments_marker.scale.z = 0.04;
-  segments_marker.color.r = 1.0;
-  segments_marker.color.g = 0.0;
-  segments_marker.color.b = 0.0;
-  segments_marker.color.a = 1.0;
+  segments_marker.scale.z = 0.1;
+  segments_marker.color = segments_color_;
   segments_marker.lifetime = ros::Duration(0.0999);
 
   for (auto segment : obstacles->segments) {
@@ -110,6 +111,53 @@ void ObstacleVisualizer::obstaclesCallback(const obstacle_detector::Obstacles::C
   markers_array.markers.push_back(segments_marker);
 
   markers_pub_.publish(markers_array);
+}
+
+void ObstacleVisualizer::setColor(std_msgs::ColorRGBA &color, int color_code, float alpha) {
+  switch (color_code) {
+  case 0:
+    color.r = 0.0;
+    color.g = 0.0;
+    color.b = 0.0;
+    break;
+  case 1:
+    color.r = 1.0;
+    color.g = 1.0;
+    color.b = 1.0;
+    break;
+  case 2:
+    color.r = 1.0;
+    color.g = 0.0;
+    color.b = 0.0;
+    break;
+  case 3:
+    color.r = 0.0;
+    color.g = 1.0;
+    color.b = 0.0;
+    break;
+  case 4:
+    color.r = 0.0;
+    color.g = 0.0;
+    color.b = 1.0;
+    break;
+  case 5:
+    color.r = 1.0;
+    color.g = 1.0;
+    color.b = 0.0;
+    break;
+  case 6:
+    color.r = 1.0;
+    color.g = 0.0;
+    color.b = 1.0;
+    break;
+  case 7:
+    color.r = 0.0;
+    color.g = 1.0;
+    color.b = 1.0;
+    break;
+  }
+
+  color.a = alpha;
 }
 
 int main(int argc, char** argv) {

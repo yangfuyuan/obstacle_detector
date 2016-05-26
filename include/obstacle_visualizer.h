@@ -49,11 +49,22 @@ public:
 
 private:
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
+  void setColor(std_msgs::ColorRGBA& color, int color_code, float alpha);
 
   // ROS handlers
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
+
   ros::Subscriber obstacles_sub_;
   ros::Publisher  markers_pub_;
+
+  std_msgs::ColorRGBA circles_color_;
+  std_msgs::ColorRGBA segments_color_;
+
+  // Parameters
+  int p_circles_color_;
+  int p_segments_color_;
+  double p_alpha_;
 };
 
 } // namespace obstacle_detector
