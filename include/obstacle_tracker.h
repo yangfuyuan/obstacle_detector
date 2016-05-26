@@ -105,7 +105,7 @@ public:
   }
 
   CircleObstacle obstacle;
-  int fade_counter;       // If the fade counter reaches 0, remove the obstacle from the list
+  int fade_counter; // If the fade counter reaches 0, remove the obstacle from the list
 
 private:
   KalmanFilter kf_;
@@ -124,15 +124,17 @@ private:
   ros::NodeHandle nh_local_;
 
   ros::Subscriber obstacles_sub_;
-  ros::Publisher obstacles_pub_;
+  ros::Publisher tracked_obstacles_pub_;
+  ros::Publisher untracked_obstacles_pub_;
 
   // Obstacle Tracker specific fields
   Obstacles tracked_obstacles_msg_;
+  Obstacles untracked_obstacles_msg_;
 
   std::vector<TrackedObstacle> tracked_obstacles_;
   std::vector<CircleObstacle> untracked_obstacles_;
 
-  int p_fade_counter_; // After this many iteration without update, the obstacle will be discarded
+  int p_fade_counter_; // After this many iterations without update, the obstacle will be discarded
   double p_pose_measure_variance_;
   double p_pose_process_variance_;
   double p_radius_measure_variance_;

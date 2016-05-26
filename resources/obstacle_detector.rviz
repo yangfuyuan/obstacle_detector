@@ -3,7 +3,8 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /TrackedObstacles1/Namespaces1
       Splitter Ratio: 0.5
     Tree Height: 571
   - Class: rviz/Selection
@@ -77,11 +78,18 @@ Visualization Manager:
       Use rainbow: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /obstacles_markers
       Name: RawObstacles
       Namespaces:
-        circles: true
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /untracked_obstacles_markers
+      Name: UntrackedObstacles
+      Namespaces:
         segments: true
       Queue Size: 100
       Value: true

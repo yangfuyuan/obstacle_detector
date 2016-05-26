@@ -38,15 +38,24 @@
     <param name="radius_process_variance" value="0.2"/>
   </node>
 
-  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen">
-    <param name="circles_color"  value="3"/>
-    <param name="segments_color" value="2"/>
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="raw_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="5"/>
+    <param name="segments_color" value="6"/>
     <param name="alpha"          value="0.7"/>
   </node>
 
-  <node pkg="obstacle_detector" type="obstacle_visualizer" name="tracked_obstacle_visualizer" output="screen">
-    <param name="circles_color"  value="4"/>
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="untracked_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="2"/>
     <param name="segments_color" value="2"/>
+    <param name="alpha"          value="0.7"/>
+
+    <remap from="obstacles" to="untracked_obstacles"/>
+    <remap from="obstacles_markers" to="untracked_obstacles_markers"/>
+  </node>
+
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="tracked_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="3"/>
+    <param name="segments_color" value="3"/>
     <param name="alpha"          value="0.7"/>
 
     <remap from="obstacles" to="tracked_obstacles"/>
