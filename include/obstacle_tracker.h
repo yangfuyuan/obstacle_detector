@@ -60,10 +60,10 @@ CircleObstacle mergeCircObstacles(const CircleObstacle& c1, const CircleObstacle
 
 class TrackedObstacle {
 public:
-  TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_max) : kf_(0, 3, 6) {
+  TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_size) : kf_(0, 3, 6) {
     obstacle = init_obstacle;
-    fade_counter_size_ = fade_counter_max;
-    fade_counter = fade_counter_max;
+    fade_counter_size_ = fade_counter_size;
+    fade_counter_ = fade_counter_size;
 
     double TP = 0.01; // Sampling time in sec.
 
@@ -99,7 +99,7 @@ public:
     kf_.y(1) = new_obstacle.center.y;
     kf_.y(2) = new_obstacle.radius;
 
-    fade_counter = fade_counter_size_;
+    fade_counter_ = fade_counter_size_;
   }
 
   void updateTracking() {
@@ -109,23 +109,28 @@ public:
     obstacle.center.y = kf_.q_est(2);
     obstacle.radius = kf_.q_est(4);
 
-    fade_counter--;
+    fade_counter_--;
+  }
+
+  bool hasFaded() {
+    return ((fade_counter_ <= 0) ? true : false);
   }
 
   CircleObstacle obstacle;
-  int fade_counter; // If the fade counter reaches 0, remove the obstacle from the list
 
 private:
   KalmanFilter kf_;
   int fade_counter_size_;
+  int fade_counter_;  // If the fade counter reaches 0, remove the obstacle from the list
 };
+
 
 class ObstacleTracker {
 public:
   ObstacleTracker();
 
 private:
-  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& new_obstacles);
 
   // ROS handlers
   ros::NodeHandle nh_;
@@ -142,7 +147,8 @@ private:
   std::vector<TrackedObstacle> tracked_obstacles_;
   std::vector<CircleObstacle> untracked_obstacles_;
 
-  int p_fade_counter_; // After this many iterations without update, the obstacle will be discarded
+  // Parameters
+  int p_fade_counter_size_;
   double p_min_correspondence_cost_;
   double p_pose_measure_variance_;
   double p_pose_process_variance_;

@@ -3,7 +3,7 @@
   <node pkg="obstacle_detector" type="virtual_obstacle_publisher" name="virtual_obstacle_publisher"/>
   
   <node pkg="obstacle_detector" type="obstacle_tracker" name="obstacle_tracker" output="screen">
-    <param name="fade_counter"            value="50"/>
+    <param name="fade_counter_size"       value="50"/>
     <param name="min_correspondence_cost" value="1.0"/>
     <param name="pose_measure_variance"   value="1.0"/>
     <param name="radius_measure_variance" value="1.0"/>

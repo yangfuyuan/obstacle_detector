@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   obstacle_detector::Obstacles obst_msg;
   obst_msg.header.frame_id = "world";
 
-  obstacle_detector::CircleObstacle circ1, circ2;
+  obstacle_detector::CircleObstacle circ1, circ2, circ3;
 
   ROS_INFO("Virtual Obstacle Publisher [OK]");
 
@@ -23,6 +23,11 @@ int main(int argc, char** argv) {
     obst_msg.header.stamp = ros::Time::now();
     obst_msg.circles.clear();
 
+    circ3.center.x = 1.0 * cos(0.2 * t);
+    circ3.center.y = 1.0;
+    circ3.radius = 0.15;
+    obst_msg.circles.push_back(circ3);
+
 //    // Circular motion example
 //    circ1.center.x = 1.5 * cos(0.2 * t) + 0.001 * (rand() % 100);
 //    circ1.center.y = 1.5 * sin(0.2 * t) + 0.001 * (rand() % 100);
@@ -31,6 +36,7 @@ int main(int argc, char** argv) {
 //    circ2.center.x = 1.5 * cos(-0.2 * t) + 0.001 * (rand() % 100);
 //    circ2.center.y = 1.5 * sin(-0.2 * t) + 0.001 * (rand() % 100);
 //    circ2.radius = 0.15 + 0.001 * (rand() % 100);
+
 
 //    // Fusion example
 //    if (t < 5.0) {
@@ -52,6 +58,7 @@ int main(int argc, char** argv) {
 
 //      obst_msg.circles.push_back(circ1);
 //    }
+
 
     // Fission example
     if (t < 5.0) {

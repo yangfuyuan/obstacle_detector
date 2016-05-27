@@ -46,8 +46,7 @@ public:
     using arma::vec;
 
     A = mat(n,n).eye();
-    if (l > 0)
-      B = mat(n,l).zeros();
+    B = mat(n,l).zeros();
     C = mat(m,n).zeros();
 
     Q = mat(n,n).eye();
@@ -56,8 +55,7 @@ public:
 
     K = mat(n,m).eye();
 
-    if (l > 0)
-      u = vec(l).zeros();
+    u = vec(l).zeros();
     q_pred = vec(n).zeros();
     q_est = vec(n).zeros();
     y = vec(m).zeros();
@@ -70,10 +68,7 @@ public:
     mat I = arma::eye<mat>(n,n);
 
     // Predict State
-    if (l > 0)
-      q_pred = A * q_est + B * u;
-    else
-      q_pred = A * q_est;
+    q_pred = A * q_est + B * u;
 
     P = A * P * trans(A) + Q;
 
