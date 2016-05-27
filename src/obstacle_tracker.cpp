@@ -10,6 +10,7 @@ ObstacleTracker::ObstacleTracker() : nh_(""), nh_local_("~") {
   untracked_obstacles_pub_ = nh_.advertise<obstacle_detector::Obstacles>("untracked_obstacles", 10);
 
   nh_local_.param("fade_counter", p_fade_counter_, 50);
+  nh_local_.param("min_correspondence_cost", p_min_correspondence_cost_, 0.1);
   nh_local_.param("pose_measure_variance", p_pose_measure_variance_, 1.0);
   nh_local_.param("pose_process_variance", p_pose_process_variance_, 1.0);
   nh_local_.param("radius_measure_variance", p_radius_measure_variance_, 1.0);
@@ -49,6 +50,11 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   int L = tracked_obstacles_.size();
   int M = untracked_obstacles_.size();
 
+  cout << "---" << endl;
+  cout << "New: " << K << endl;
+  cout << "Tracked: " << L << endl;
+  cout << "Untracked: " << M << endl;
+
   if (L + M == 0) {
     untracked_obstacles_.assign(obstacles->circles.begin(), obstacles->circles.end());
     return;
@@ -70,6 +76,9 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
       cost_matrix(k, m + L) = costFunction(obstacles->circles[k], untracked_obstacles_[m]);
   }
 
+  cout << "Cost matrix:" << endl;
+  cout << endl << cost_matrix << endl;
+
   /*
    * Vector of row minimal indices keeps the indices of old obstacles (tracked and untracked)
    * that have the minimum cost related to each of new obstacles, i.e. row_min_indices[k]
@@ -78,7 +87,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   vector<int> row_min_indices(K, -1); // Minimum index -1 means no correspondence has been found
 
   for (int k = 0; k < K; ++k) {
-    double min_cost = 1.0;   // TODO: Find minimum cost allowable and set it here (if cost is bigger - k-th new obstacle goes to untracked)
+    double min_cost = p_min_correspondence_cost_;
 
     for (int l = 0; l < L; ++l) {
       if (cost_matrix(k, l) < min_cost) {
@@ -95,6 +104,11 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
     }
   }
 
+  cout << "Row min indices: ";
+  for (int idx : row_min_indices)
+    cout << idx << " ";
+  cout << endl;
+
   /*
    * Vector of column minimal indices keeps the indices of new obstacles that has the minimum
    * cost related to each of old (tracked and untracked) obstacles, i.e. col_min_indices[i]
@@ -103,7 +117,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   vector<int> col_min_indices(L + M, -1); // Minimum index -1 means no correspondence has been found
 
   for (int l = 0; l < L; ++l) {
-    double min_cost = 1.0;
+    double min_cost = p_min_correspondence_cost_;
 
     for (int k = 0; k < K; ++k) {
       if (cost_matrix(k, l) < min_cost) {
@@ -114,7 +128,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   }
 
   for (int m = 0; m < M; ++m) {
-    double min_cost = 1.0;
+    double min_cost = p_min_correspondence_cost_;
 
     for (int k = 0; k < K; ++k) {
       if (cost_matrix(k, m + L) < min_cost) {
@@ -124,11 +138,16 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
     }
   }
 
+  cout << "Col min indices: ";
+  for (int idx : col_min_indices)
+    cout << idx << " ";
+  cout << endl;
+
   /*
    * Possible situations:
    * If no correspondence between a new obstacle and any old one was found - save it as untracked.
-   * If new obstacle corresponds with tracked one - update it.
-   * If new obstacle corresponds with untracked one - save it as tracked and update it.
+   * If new obstacle corresponds with only one tracked obstacle - update it.
+   * If new obstacle corresponds with only one untracked obstacle - save it as tracked and update it.
    *
    * If two old obstacles connect into one, we call it a fusion.
    * If one old obstacle splits into two, we call it a fission.
@@ -141,7 +160,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   // Check for fusion
   for (int i = 0; i < col_min_indices.size(); ++i) {
     for (int j = i+1; j < col_min_indices.size(); ++j) {
-      if (col_min_indices[i] == col_min_indices[j]) {
+      if (col_min_indices[i] == col_min_indices[j] && col_min_indices[i] >= 0) {
         cout << "Fusion" << endl;
         break;
       }
@@ -151,8 +170,43 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
   // Check for fission
   for (int i = 0; i < row_min_indices.size(); ++i) {
     for (int j = i+1; j < row_min_indices.size(); ++j) {
-      if (row_min_indices[i] == row_min_indices[j]) {
+      if (row_min_indices[i] == row_min_indices[j] && row_min_indices[i] >= 0) {
         cout << "Fission" << endl;
+
+        CircleObstacle c1;
+        CircleObstacle c2;
+
+        if (row_min_indices[i] < L) {
+          c1 = mergeCircObstacles(obstacles->circles[i], tracked_obstacles_[row_min_indices[i]].obstacle);
+          c2 = mergeCircObstacles(obstacles->circles[j], tracked_obstacles_[row_min_indices[j]].obstacle);
+
+          tracked_obstacles_.erase(tracked_obstacles_.begin() + row_min_indices[i]);
+        }
+        else if (row_min_indices[i] >= L) {
+          c1 = mergeCircObstacles(obstacles->circles[i], untracked_obstacles_[row_min_indices[i] - L]);
+          c2 = mergeCircObstacles(obstacles->circles[j], untracked_obstacles_[row_min_indices[j] - L]);
+
+          untracked_obstacles_.erase(untracked_obstacles_.begin() + row_min_indices[i] - L);
+        }
+
+        TrackedObstacle* to1 = new TrackedObstacle(c1, p_fade_counter_);
+        TrackedObstacle* to2 = new TrackedObstacle(c2, p_fade_counter_);
+
+        to1->setCovariances(p_pose_measure_variance_, p_pose_process_variance_, p_radius_measure_variance_, p_radius_process_variance_);
+        to2->setCovariances(p_pose_measure_variance_, p_pose_process_variance_, p_radius_measure_variance_, p_radius_process_variance_);
+
+        to1->updateMeasurement(obstacles->circles[i]);
+        to2->updateMeasurement(obstacles->circles[j]);
+
+        tracked_obstacles_.push_back(*to1);
+        tracked_obstacles_.push_back(*to2);
+
+        delete to1;
+        delete to2;
+
+        // Mark both new obstacles as fissed (index -2)
+        row_min_indices[i] = row_min_indices[j] = -2;
+
         break;
       }
     }
@@ -163,7 +217,7 @@ void ObstacleTracker::obstaclesCallback(const obstacle_detector::Obstacles::Cons
     if (row_min_indices[k] == -1) {
       new_untracked_obstacles.push_back(obstacles->circles[k]);
     }
-    else if (row_min_indices[k] < L) {
+    else if (row_min_indices[k] < L && row_min_indices[k] >= 0) {
       tracked_obstacles_[row_min_indices[k]].updateMeasurement(obstacles->circles[k]);
     }
     else if (row_min_indices[k] >= L) {

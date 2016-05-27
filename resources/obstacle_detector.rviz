@@ -25,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -86,13 +86,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /untracked_obstacles_markers
       Name: UntrackedObstacles
       Namespaces:
-        segments: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /tracked_obstacles_markers
@@ -107,19 +107,13 @@ Visualization Manager:
       Frame Timeout: 9999
       Frames:
         All Enabled: true
-        scanner:
-          Value: true
-        world:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          scanner:
-            {}
+        {}
       Update Interval: 0
       Value: true
   Enabled: true

@@ -50,6 +50,14 @@ double costFunction(const CircleObstacle& c1, const CircleObstacle& c2) {
   return sqrt(pow(c1.center.x - c2.center.x, 2.0) + pow(c1.center.y - c2.center.y, 2.0) + pow(c1.radius - c2.radius, 2.0));
 }
 
+CircleObstacle mergeCircObstacles(const CircleObstacle& c1, const CircleObstacle& c2) {
+  CircleObstacle c;
+  c.center.x = (c1.center.x + c2.center.x) / 2.0;
+  c.center.y = (c1.center.y + c2.center.y) / 2.0;
+  c.radius = (c1.radius + c2.radius) / 2.0;
+  return c;
+}
+
 class TrackedObstacle {
 public:
   TrackedObstacle(const CircleObstacle& init_obstacle, int fade_counter_max) : kf_(0, 3, 6) {
@@ -57,7 +65,7 @@ public:
     fade_counter_size_ = fade_counter_max;
     fade_counter = fade_counter_max;
 
-    double TP = 0.01;
+    double TP = 0.01; // Sampling time in sec.
 
     kf_.A(0, 1) = TP;
     kf_.A(2, 3) = TP;
@@ -135,6 +143,7 @@ private:
   std::vector<CircleObstacle> untracked_obstacles_;
 
   int p_fade_counter_; // After this many iterations without update, the obstacle will be discarded
+  double p_min_correspondence_cost_;
   double p_pose_measure_variance_;
   double p_pose_process_variance_;
   double p_radius_measure_variance_;
