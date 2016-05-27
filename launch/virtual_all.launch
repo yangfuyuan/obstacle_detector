@@ -1,0 +1,40 @@
+<!-- Runs obstacle tracker with a virtual obstacle publisher. -->
+<launch>
+  <node pkg="obstacle_detector" type="virtual_obstacle_publisher" name="virtual_obstacle_publisher"/>
+  
+  <node pkg="obstacle_detector" type="obstacle_tracker" name="obstacle_tracker" output="screen">
+    <param name="fade_counter"            value="50"/>
+    <param name="min_correspondence_cost" value="1.0"/>
+    <param name="pose_measure_variance"   value="1.0"/>
+    <param name="radius_measure_variance" value="1.0"/>
+    <param name="pose_process_variance"   value="0.01"/>    
+    <param name="radius_process_variance" value="0.01"/>
+  </node>
+
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="raw_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="5"/>
+    <param name="segments_color" value="6"/>
+    <param name="alpha"          value="0.7"/>
+  </node>
+
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="untracked_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="2"/>
+    <param name="segments_color" value="2"/>
+    <param name="alpha"          value="0.7"/>
+
+    <remap from="obstacles" to="untracked_obstacles"/>
+    <remap from="obstacles_markers" to="untracked_obstacles_markers"/>
+  </node>
+
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="tracked_obstacle_visualizer" output="screen">
+    <param name="circles_color"  value="3"/>
+    <param name="segments_color" value="3"/>
+    <param name="alpha"          value="0.7"/>
+
+    <remap from="obstacles" to="tracked_obstacles"/>
+    <remap from="obstacles_markers" to="tracked_obstacles_markers"/>
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find obstacle_detector)/resources/obstacle_detector.rviz"/>
+</launch>
+
